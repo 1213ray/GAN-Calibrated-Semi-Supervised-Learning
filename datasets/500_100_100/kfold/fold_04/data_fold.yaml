@@ -1,0 +1,5 @@
+names:
+- person
+path: ''
+train: C:\Users\alian\PycharmProjects\yolov8\datasets\500_100_100\kfold\fold_04\train_list.txt
+val: C:\Users\alian\PycharmProjects\yolov8\datasets\500_100_100\val

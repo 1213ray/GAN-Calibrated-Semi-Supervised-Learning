@@ -1,0 +1,115 @@
+"""cGAN Patch-Calibrator  —  程式碼庫 (步驟 1-5/5)
+=================================================
+此單一畫布現在包含 **完整最小可執行專案**：
+ 1. *models.py*          — 生成器 + 判別器
+ 2. *cgan_datasets.py*   — 資料集與實用函數
+ 3. *train_cgan.py*      — 訓練腳本
+ 4. *inference.py*       — 單圖像校準實用程式
+ 5. *README.md* / *config.yaml* — 使用說明與超參數 (← 新增)
+
+> 將所有內容依模組切檔 (`models.py`, `cgan_datasets.py`, …) 便能直接執行。
+"""
+
+# =================================================
+# models.py  —  Generator & PatchGAN Discriminator
+# =================================================
+[... existing models.py content remains unchanged ...]
+
+# =================================================
+# cgan_datasets.py  —  CalibratorDataset & utils
+# =================================================
+[... existing cgan_datasets.py content remains unchanged ...]
+
+# =================================================
+# train_cgan.py  —  Training script
+# =================================================
+[... existing train_cgan.py content remains unchanged ...]
+
+# =================================================
+# inference.py  —  Single‑image calibration utility
+# =================================================
+[... existing inference.py content remains unchanged ...]
+
+# =================================================
+# README.md  —  快速入門與使用指南
+# =================================================
+"""
+# cGAN 圖像塊校準器
+
+一個條件式 GAN，透過回歸每個預測框的 4 維偏移量 **Δ = (Δcx_rel, Δcy_rel, log Δw, log Δh)** 來精煉 YOLO 偽標籤。
+訓練對來自 K-Fold 偽標籤和匹配的 GT 框；生成器學習校準，而 PatchGAN 判別器強制執行局部真實性。
+
+---
+## 目錄結構
+```
+project_root/
+ ├── images/                    # 原始圖像 (.jpg/.png)
+ ├── labels_gt/                 # 真實 YOLO txt (cls cx cy w h)
+ ├── merged_pseudo/             # KFOLD 偽標籤 txt
+ ├── cgan/                      # 此儲存庫
+ │    ├── models.py
+ │    ├── cgan_datasets.py
+ │    ├── train_cgan.py
+ │    ├── inference.py
+ │    └── config.yaml
+ └── runs/                      # 檢查點與日誌
+```
+
+## 安裝
+```bash
+python -m venv .venv && source .venv/bin/activate  # Windows: .venv\Scripts\activate
+pip install -r requirements.txt  # torch>=2.2, torchvision, pillow, tensorboard, tqdm, pyyaml
+```
+
+## 訓練
+```bash
+python train_cgan.py \
+    --data_dir   ../images \
+    --img_size   128 \
+    --batch_size 32 \
+    --n_epochs   120 \
+    --lambda_l1  100 \
+    --out        runs/exp1
+```
+*Early‑stop* 以驗證集 **IoU_after – IoU_before** 連續 10 epoch 無提升 (<1e‑4) 判定。
+
+## 推論
+```bash
+python inference.py \
+    --weights   runs/exp1/G_best.pth \
+    --image     demo.jpg \
+    --pred_txt  demo_pred.txt \
+    --out_txt   demo_calib.txt
+```
+`demo_pred.txt` 為原 YOLO 偽標籤；輸出 `demo_calib.txt` 同格式但位置已校正。
+
+## 超參數
+主動覆寫請編輯 `config.yaml` 或 CLI 旗標。
+
+---
+## 引用
+如果您在學術工作中使用此模組，請引用原始的
+pix2pix 論文 (Isola *et al.*, 2017) 和我們的校準器改編。
+"""
+
+# =================================================
+# config.yaml  —  Default hyper‑parameters
+# =================================================
+img_size: 128 # 圖像大小
+batch_size: 32 # 批次大小
+n_epochs: 120 # 訓練 epoch 數量
+lr: 0.0002 # 學習率
+beta1: 0.5 # Adam 優化器參數 beta1
+beta2: 0.999 # Adam 優化器參數 beta2
+lambda_l1: 100 # L1 損失權重
+spectral_norm: true # 是否使用譜範數
+delta_scale: 0.25 # delta 縮放因子
+early_stop: # 早停設定
+  patience: 10 # 早停耐心值
+  min_delta: 1.0e-4 # 早停最小 delta
+train_split: 0.9 # 訓練集分割比例
+val_split: 0.1 # 驗證集分割比例
+amp: true # 是否使用自動混合精度
+save_dir: runs/exp # 模型儲存目錄
+seed: 42 # 隨機種子
+"""

@@ -1,0 +1,6 @@
+train: C:\Users\alian\PycharmProjects\yolov8\datasets\500_100_100\train
+val: C:\Users\alian\PycharmProjects\yolov8\datasets\500_100_100\val
+test: C:\Users\alian\PycharmProjects\yolov8\datasets\500_100_100\test
+
+nc: 1
+names: ['person']

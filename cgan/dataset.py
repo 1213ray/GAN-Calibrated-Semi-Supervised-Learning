@@ -225,16 +225,16 @@ class CalibratorDataset(Dataset):
         """裁剪邊界框區域 → 填充成正方形 → 調整大小 (out_size×out_size)。"""
         W, H = img.size
         cx, cy, w, h = bbox_xywh
-        # 轉換為像素座標
-        px = cx * W
-        py = cy * H
-        pw = w * W
-        ph = h * H
+        # 轉換為像素座標並確保是標量值
+        px = float(cx) * W
+        py = float(cy) * H
+        pw = float(w) * W
+        ph = float(h) * H
         x1 = max(0, px - pw / 2)
         y1 = max(0, py - ph / 2)
         x2 = min(W, px + pw / 2)
         y2 = min(H, py + ph / 2)
-        crop = img.crop((x1, y1, x2, y2))
+        crop = img.crop((int(x1), int(y1), int(x2), int(y2)))
         # 填充成正方形
         pad_w = max(crop.height - crop.width, 0)
         pad_h = max(crop.width - crop.height, 0)

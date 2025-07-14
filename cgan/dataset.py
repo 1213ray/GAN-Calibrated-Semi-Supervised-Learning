@@ -25,6 +25,7 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset
 from torchvision import transforms
 from PIL import Image, ImageOps
+import yaml
 
 __all__ = [
     "weights_init_normal", "GeneratorUNet", "Discriminator",
@@ -176,12 +177,23 @@ class CalibratorDataset(Dataset):
     所有座標都已正規化 (YOLO)。
     """
 
-    def __init__(self, root: str | os.PathLike, img_size: int = 128, iou_thr: float = 0.3, transform: transforms.Compose | None = None):
+    def __init__(self, root: str | os.PathLike, img_size: int = None, iou_thr: float = None, transform: transforms.Compose | None = None):
         super().__init__()
         self.root = Path(root)
         self.img_dir = self.root / "images"
         self.gt_dir = self.root / "labels_gt"
         self.pred_dir = self.root / "labels_pred"
+        
+        # 載入預設配置
+        config_path = Path(__file__).parent / "config.yaml"
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = yaml.safe_load(f)
+        
+        if img_size is None:
+            img_size = config['img_size']
+        if iou_thr is None:
+            iou_thr = config['iou_threshold']
+        
         self.img_size = int(img_size)
         self.iou_thr = float(iou_thr)
 

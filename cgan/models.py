@@ -27,6 +27,8 @@ from __future__ import annotations
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import yaml
+from pathlib import Path
 
 # -------------------------------------------------
 #  Helper: 權重初始化 (pix2pix 風格)
@@ -87,8 +89,14 @@ class UNetUp(nn.Module):
 class GeneratorUNet(nn.Module):
     """4層下採樣 / 4層上採樣的 U-Net，輸出 4 維的邊界框校正 Δ。"""
 
-    def __init__(self, delta_scale: float = 0.25):
+    def __init__(self, delta_scale: float = None):
         super().__init__()
+        if delta_scale is None:
+            # 載入預設配置
+            config_path = Path(__file__).parent / "config.yaml"
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = yaml.safe_load(f)
+            delta_scale = config['delta_scale']
         self.delta_scale = float(delta_scale)
 
         # 編碼器
@@ -139,8 +147,15 @@ class GeneratorUNet(nn.Module):
 class Discriminator(nn.Module):
     """PatchGAN，用於判斷 (pred_patch, other_patch) 對。"""
 
-    def __init__(self, spectral_norm: bool = False):
+    def __init__(self, spectral_norm: bool = None):
         super().__init__()
+        
+        if spectral_norm is None:
+            # 載入預設配置
+            config_path = Path(__file__).parent / "config.yaml"
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = yaml.safe_load(f)
+            spectral_norm = config['spectral_norm']
 
         def conv_block(in_ch: int, out_ch: int, norm: bool = True):
             conv = nn.Conv2d(in_ch, out_ch, 4, stride=2, padding=1)

@@ -10,6 +10,7 @@ import torch.nn as nn
 import torch.optim as optim
 from pathlib import Path
 import argparse
+import yaml
 from torch.utils.data import DataLoader, random_split
 from torchvision.utils import save_image
 
@@ -87,28 +88,41 @@ def iou_xywh_batch(boxes1, boxes2):
     return inter_area / (union_area + 1e-6)
 
 def main():
+    # 載入配置檔案
+    config_path = Path(__file__).parent / "config.yaml"
+    with open(config_path, 'r', encoding='utf-8') as f:
+        config = yaml.safe_load(f)
+    
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_dir", type=str, required=True, help="Dataset root directory")
-    parser.add_argument("--img_size", type=int, default=128, help="Image size")
-    parser.add_argument("--batch_size", type=int, default=16, help="Batch size")
-    parser.add_argument("--n_epochs", type=int, default=50, help="Number of training epochs")
-    parser.add_argument("--lr_g", type=float, default=1e-4, help="Generator learning rate")
-    parser.add_argument("--lr_d", type=float, default=1e-4, help="Discriminator learning rate")
-    parser.add_argument("--lambda_l1", type=float, default=20.0, help="L1 loss weight (reduced from 100)")
-    parser.add_argument("--patience", type=int, default=15, help="Early stopping patience")
-    parser.add_argument("--min_delta", type=float, default=1e-5, help="Early stopping min delta")
-    parser.add_argument("--out_dir", type=str, default="runs_fixed", help="Output directory")
-    parser.add_argument("--delta_scale", type=float, default=0.1, help="Delta scale factor")
-    parser.add_argument("--d_train_ratio", type=int, default=2, help="Train D every N batches")
+    parser.add_argument("--data_dir", type=str, default=config['data_dir'], help="Dataset root directory")
+    parser.add_argument("--config", type=str, default=str(config_path), help="Config file path")
+    # 允許命令行覆蓋配置檔案參數
+    parser.add_argument("--img_size", type=int, default=config['img_size'], help="Image size")
+    parser.add_argument("--batch_size", type=int, default=config['batch_size'], help="Batch size")
+    parser.add_argument("--n_epochs", type=int, default=config['n_epochs'], help="Number of training epochs")
+    parser.add_argument("--lr", type=float, default=config['lr'], help="Learning rate")
+    parser.add_argument("--beta1", type=float, default=config['beta1'], help="Adam beta1")
+    parser.add_argument("--beta2", type=float, default=config['beta2'], help="Adam beta2")
+    parser.add_argument("--lambda_l1", type=float, default=config['lambda_l1'], help="L1 loss weight")
+    parser.add_argument("--spectral_norm", action='store_true', default=config['spectral_norm'], help="Use spectral norm")
+    parser.add_argument("--delta_scale", type=float, default=config['delta_scale'], help="Delta scale factor")
+    parser.add_argument("--patience", type=int, default=config['early_stop']['patience'], help="Early stopping patience")
+    parser.add_argument("--min_delta", type=float, default=config['early_stop']['min_delta'], help="Early stopping min delta")
+    parser.add_argument("--train_split", type=float, default=config['train_split'], help="Train split ratio")
+    parser.add_argument("--val_split", type=float, default=config['val_split'], help="Validation split ratio")
+    parser.add_argument("--amp", action='store_true', default=config['amp'], help="Use automatic mixed precision")
+    parser.add_argument("--save_dir", type=str, default=config['save_dir'], help="Save directory")
+    parser.add_argument("--seed", type=int, default=config['seed'], help="Random seed")
+    parser.add_argument("--d_train_ratio", type=int, default=config['d_train_ratio'], help="Train D every N batches")
     args = parser.parse_args()
 
-    torch.manual_seed(42)
+    torch.manual_seed(args.seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
     # Load dataset
     full_dataset = CalibratorDataset(args.data_dir, img_size=args.img_size)
-    val_len = max(1, int(0.1 * len(full_dataset)))
+    val_len = max(1, int(args.val_split * len(full_dataset)))
     train_len = len(full_dataset) - val_len
     train_set, val_set = random_split(full_dataset, [train_len, val_len])
     train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=2, pin_memory=True)
@@ -116,9 +130,9 @@ def main():
 
     print(f"Training samples: {len(train_set)}, Validation samples: {len(val_set)}")
 
-    # Initialize models with improved delta_scale
+    # Initialize models
     netG = GeneratorUNet(delta_scale=args.delta_scale).to(device)
-    netD = Discriminator().to(device)
+    netD = Discriminator(spectral_norm=args.spectral_norm).to(device)
     netG.apply(weights_init_normal)
     netD.apply(weights_init_normal)
 
@@ -126,17 +140,17 @@ def main():
     criterion_GAN = nn.BCEWithLogitsLoss()
     criterion_L1 = nn.SmoothL1Loss()
 
-    # Optimizers with different learning rates
-    optimizer_G = optim.Adam(netG.parameters(), lr=args.lr_g, betas=(0.5, 0.999))
-    optimizer_D = optim.Adam(netD.parameters(), lr=args.lr_d, betas=(0.5, 0.999))
+    # Optimizers
+    optimizer_G = optim.Adam(netG.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
+    optimizer_D = optim.Adam(netD.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
 
     # Output directory
-    out_root = Path(args.out_dir)
+    out_root = Path(args.save_dir)
     out_root.mkdir(parents=True, exist_ok=True)
     (out_root / "samples").mkdir(exist_ok=True)
     ckpt_best = out_root / "G_best.pth"
 
-    best_val_iou, epochs_no_improve = -1.0, 0  # Changed initial value
+    best_val_iou, epochs_no_improve = -1.0, 0
     
     print("Starting training...")
     for epoch in range(1, args.n_epochs + 1):

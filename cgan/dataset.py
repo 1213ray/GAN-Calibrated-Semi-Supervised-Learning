@@ -258,31 +258,102 @@ class CalibratorDataset(Dataset):
     # ----------------  index samples ----------------
 
     def _prepare_index(self) -> None:
-        """遍歷所有預測標籤並與真實標籤匹配以構建索引列表。"""
+        """使用改進的一對一匹配策略構建索引列表。"""
         for txt_pred in sorted(self.pred_dir.glob("*.txt")):
             name = txt_pred.stem
             txt_gt = self.gt_dir / f"{name}.txt"
             img_path = self.img_dir / f"{name}.jpg"
             if not txt_gt.exists() or not img_path.exists():
                 continue
-            gt_boxes = torch.tensor([[float(x) for x in l.split()[1:5]]
-                                      for l in txt_gt.read_text().strip().splitlines()]) if txt_gt.stat().st_size > 0 else torch.empty((0,4))
-            for line in txt_pred.read_text().strip().splitlines():
-                parts = line.strip().split()
-                if len(parts) < 6:
-                    continue
-                pred_box = torch.tensor([float(x) for x in parts[1:5]])
-                # 匹配真實標籤
-                if len(gt_boxes):
-                    ious = torch.tensor([self._bbox_iou(pred_box, g) for g in gt_boxes])
-                    idx = torch.argmax(ious).item()
-                    if ious[idx] < self.iou_thr:
-                        continue  # 太遠，跳過樣本
-                    gt_box = gt_boxes[idx]
-                else:
-                    continue  # 圖像中沒有真實標籤
-                delta = self._bbox2delta(gt_box, pred_box)
-                self.samples.append((img_path, 0, pred_box, delta, gt_box))  # 存儲原始gt_box
+            
+            # 載入GT和預測框
+            gt_boxes = self._load_boxes(txt_gt)
+            pred_boxes = self._load_pred_boxes(txt_pred)
+            
+            if len(gt_boxes) == 0 or len(pred_boxes) == 0:
+                continue
+            
+            # 使用改進的一對一匹配
+            matches = self._hungarian_matching(pred_boxes, gt_boxes)
+            
+            for pred_idx, gt_idx in matches:
+                pred_box = pred_boxes[pred_idx]
+                gt_box = gt_boxes[gt_idx]
+                
+                # 計算改進的delta
+                delta = self._improved_bbox2delta(gt_box, pred_box)
+                self.samples.append((img_path, 0, pred_box, delta, gt_box))
+    
+    def _load_boxes(self, txt_path: Path) -> torch.Tensor:
+        """載入邊界框"""
+        if txt_path.stat().st_size == 0:
+            return torch.empty((0, 4))
+        
+        boxes = []
+        for line in txt_path.read_text().strip().splitlines():
+            parts = line.strip().split()
+            if len(parts) >= 5:
+                boxes.append([float(x) for x in parts[1:5]])
+        
+        return torch.tensor(boxes) if boxes else torch.empty((0, 4))
+    
+    def _load_pred_boxes(self, txt_path: Path) -> torch.Tensor:
+        """載入預測框"""
+        if txt_path.stat().st_size == 0:
+            return torch.empty((0, 4))
+        
+        boxes = []
+        for line in txt_path.read_text().strip().splitlines():
+            parts = line.strip().split()
+            if len(parts) >= 6:  # 預測框通常有confidence
+                boxes.append([float(x) for x in parts[1:5]])
+        
+        return torch.tensor(boxes) if boxes else torch.empty((0, 4))
+    
+    def _hungarian_matching(self, pred_boxes: torch.Tensor, gt_boxes: torch.Tensor) -> List[Tuple[int, int]]:
+        """簡化的匈牙利匹配實現"""
+        if len(pred_boxes) == 0 or len(gt_boxes) == 0:
+            return []
+        
+        # 計算IoU矩陣
+        iou_matrix = torch.zeros((len(pred_boxes), len(gt_boxes)))
+        for i, pred_box in enumerate(pred_boxes):
+            for j, gt_box in enumerate(gt_boxes):
+                iou_matrix[i, j] = self._bbox_iou(pred_box, gt_box)
+        
+        # 貪婪匹配（簡化版匈牙利演算法）
+        matches = []
+        used_gt = set()
+        used_pred = set()
+        
+        # 按IoU降序排列
+        flat_indices = torch.argsort(iou_matrix.flatten(), descending=True)
+        
+        for flat_idx in flat_indices:
+            i = flat_idx // len(gt_boxes)
+            j = flat_idx % len(gt_boxes)
+            
+            if i.item() not in used_pred and j.item() not in used_gt:
+                if iou_matrix[i, j] > self.iou_thr:
+                    matches.append((i.item(), j.item()))
+                    used_pred.add(i.item())
+                    used_gt.add(j.item())
+        
+        return matches
+    
+    @staticmethod
+    def _improved_bbox2delta(gt: torch.Tensor, pred: torch.Tensor) -> torch.Tensor:
+        """改進的delta計算，更穩定的歸一化"""
+        # 使用較大的尺寸進行歸一化
+        norm_factor = max(pred[2], pred[3], 0.1)
+        dx = (gt[0] - pred[0]) / norm_factor
+        dy = (gt[1] - pred[1]) / norm_factor
+        
+        # 使用log ratio，但加入穩定性項
+        dw = math.log(max(gt[2], 1e-6) / max(pred[2], 1e-6))
+        dh = math.log(max(gt[3], 1e-6) / max(pred[3], 1e-6))
+        
+        return torch.tensor([dx, dy, dw, dh], dtype=torch.float32)
 
     @staticmethod
     def _apply_delta_to_bbox(bbox: torch.Tensor, delta: torch.Tensor) -> torch.Tensor:

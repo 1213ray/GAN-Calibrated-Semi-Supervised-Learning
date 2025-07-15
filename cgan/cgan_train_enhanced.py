@@ -165,6 +165,7 @@ def main():
         criterion_hybrid = HybridLoss(
             lambda_iou=args.lambda_iou,
             lambda_l1=args.lambda_l1,
+            lambda_focal=0.5,
             use_giou=args.use_giou
         )
     else:
@@ -249,16 +250,24 @@ def main():
             gt_boxes = apply_delta_to_bbox(pred_box, delta_true)
             
             if args.use_hybrid_loss:
-                # Use hybrid loss
-                loss_G_reg, loss_iou, loss_l1 = criterion_hybrid(
+                # Use enhanced hybrid loss
+                result = criterion_hybrid(
                     delta_pred, delta_true, calibrated_boxes, gt_boxes
                 )
+                if len(result) == 4:
+                    loss_G_reg, loss_iou, loss_l1, loss_focal = result
+                    epoch_stats['loss_focal'] = epoch_stats.get('loss_focal', 0) + loss_focal.item()
+                else:
+                    loss_G_reg, loss_iou, loss_l1 = result
+                    epoch_stats['loss_focal'] = epoch_stats.get('loss_focal', 0)
+                
                 epoch_stats['loss_iou'] += loss_iou.item()
                 epoch_stats['loss_l1'] += loss_l1.item()
             else:
                 # Use traditional L1 loss
                 loss_G_reg = criterion_L1(delta_pred, delta_true) * args.lambda_l1
                 epoch_stats['loss_l1'] += loss_G_reg.item()
+                epoch_stats['loss_focal'] = epoch_stats.get('loss_focal', 0)
 
             # Adversarial loss
             refined_patch_for_G = get_refined_patch_batch(

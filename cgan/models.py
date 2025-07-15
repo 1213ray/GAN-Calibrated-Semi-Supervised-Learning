@@ -141,6 +141,81 @@ class GeneratorUNet(nn.Module):
         return delta_raw * self.delta_scale
 
 # -------------------------------------------------
+#  簡化的生成器 (更適合回歸任務)
+# -------------------------------------------------
+
+class GeneratorSimpleRegressor(nn.Module):
+    """簡化的CNN回歸器，專門用於邊界框校正。"""
+    
+    def __init__(self, delta_scale: float = None):
+        super().__init__()
+        if delta_scale is None:
+            # 載入預設配置
+            config_path = Path(__file__).parent / "config.yaml"
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = yaml.safe_load(f)
+            delta_scale = config['delta_scale']
+        self.delta_scale = float(delta_scale)
+        
+        # 特徵提取器
+        self.features = nn.Sequential(
+            # Block 1
+            nn.Conv2d(3, 64, 3, padding=1),
+            nn.InstanceNorm2d(64),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(64, 64, 3, padding=1),
+            nn.InstanceNorm2d(64),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2, 2),  # 128 -> 64
+            
+            # Block 2
+            nn.Conv2d(64, 128, 3, padding=1),
+            nn.InstanceNorm2d(128),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(128, 128, 3, padding=1),
+            nn.InstanceNorm2d(128),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2, 2),  # 64 -> 32
+            
+            # Block 3
+            nn.Conv2d(128, 256, 3, padding=1),
+            nn.InstanceNorm2d(256),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256, 256, 3, padding=1),
+            nn.InstanceNorm2d(256),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2, 2),  # 32 -> 16
+            
+            # Block 4
+            nn.Conv2d(256, 512, 3, padding=1),
+            nn.InstanceNorm2d(512),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(512, 512, 3, padding=1),
+            nn.InstanceNorm2d(512),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2, 2),  # 16 -> 8
+        )
+        
+        # 回歸頭
+        self.regressor = nn.Sequential(
+            nn.AdaptiveAvgPool2d(1),
+            nn.Flatten(),
+            nn.Linear(512, 256),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.5),
+            nn.Linear(256, 64),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.5),
+            nn.Linear(64, 4),
+            nn.Tanh()  # (-1, 1)
+        )
+    
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        features = self.features(x)
+        delta_raw = self.regressor(features)
+        return delta_raw * self.delta_scale
+
+# -------------------------------------------------
 #  判別器 (70×70 PatchGAN)
 # -------------------------------------------------
 

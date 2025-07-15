@@ -197,7 +197,7 @@ class CalibratorDataset(Dataset):
         self.img_size = int(img_size)
         self.iou_thr = float(iou_thr)
 
-        self.samples: List[Tuple[Path, int, torch.Tensor, torch.Tensor]] = []
+        self.samples: List[Tuple[Path, int, torch.Tensor, torch.Tensor, torch.Tensor]] = []  # 添加gt_box
         self._prepare_index()
 
         self.transform = transform or transforms.Compose([
@@ -282,7 +282,7 @@ class CalibratorDataset(Dataset):
                 else:
                     continue  # 圖像中沒有真實標籤
                 delta = self._bbox2delta(gt_box, pred_box)
-                self.samples.append((img_path, 0, pred_box, delta))  # cls=0 存根
+                self.samples.append((img_path, 0, pred_box, delta, gt_box))  # 存儲原始gt_box
 
     @staticmethod
     def _apply_delta_to_bbox(bbox: torch.Tensor, delta: torch.Tensor) -> torch.Tensor:
@@ -299,13 +299,14 @@ class CalibratorDataset(Dataset):
         return len(self.samples)
 
     def __getitem__(self, idx: int):  # type: ignore[override]
-        img_path, _, pred_box, delta_true = self.samples[idx]
+        img_path, _, pred_box, delta_true, gt_box = self.samples[idx]
         img = Image.open(img_path).convert("RGB")
 
-        # 正確計算 gt_box 的座標
-        gt_box = self._apply_delta_to_bbox(pred_box, delta_true)
-
-        # 根據正確的座標裁切 patch
+        # 使用存儲的原始 gt_box 確保數據一致性
+        # 重新計算 delta 以確保精確匹配
+        recalculated_delta = self._bbox2delta(gt_box, pred_box)
+        
+        # 使用原始的 gt_box 和 pred_box 裁切 patch
         gt_patch = self._letterbox(img, gt_box, self.img_size)
         pred_patch = self._letterbox(img, pred_box, self.img_size)
 
@@ -313,4 +314,5 @@ class CalibratorDataset(Dataset):
         pred_patch = self.transform(pred_patch)
         gt_patch = self.transform(gt_patch)
         
-        return pred_patch, gt_patch, delta_true, pred_box, str(img_path)
+        # 返回重新計算的 delta 以確保一致性
+        return pred_patch, gt_patch, recalculated_delta, pred_box, str(img_path)

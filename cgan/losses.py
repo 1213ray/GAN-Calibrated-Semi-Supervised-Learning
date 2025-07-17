@@ -173,48 +173,52 @@ def smooth_clamp(x, min_val, max_val, temperature=0.1):
     """Smooth clamp function that maintains gradients"""
     return min_val + (max_val - min_val) * torch.sigmoid((x - (min_val + max_val) / 2) / temperature)
 
-def apply_delta_to_bbox(bbox, delta):
+def apply_delta_to_bbox(bbox, delta, training=True):
     """
-    Apply predicted deltas to bounding boxes with smooth clamping for better gradients
+    Apply predicted deltas to bounding boxes with consistent clamping behavior
     Args:
         bbox: (N, 4) [cx, cy, w, h]
         delta: (N, 4) [dx_rel, dy_rel, log_dw, log_dh]
+        training: bool, whether in training mode (affects gradient handling)
     Returns:
         calibrated_bbox: (N, 4) [cx, cy, w, h]
     """
-    # 使用smooth clamp保持梯度連續性
-    delta_smooth = smooth_clamp(delta, -2, 2)
-    
-    cx = bbox[:, 0] + delta_smooth[:, 0] * bbox[:, 2]
-    cy = bbox[:, 1] + delta_smooth[:, 1] * bbox[:, 3]
-    w = bbox[:, 2] * torch.exp(delta_smooth[:, 2])
-    h = bbox[:, 3] * torch.exp(delta_smooth[:, 3])
-    
-    # 使用smooth clamp保持梯度連續性
-    cx = smooth_clamp(cx, 0.05, 0.95)
-    cy = smooth_clamp(cy, 0.05, 0.95)
-    w = smooth_clamp(w, 0.01, 0.9)
-    h = smooth_clamp(h, 0.01, 0.9)
-    
-    return torch.stack([cx, cy, w, h], dim=-1)
-
-def apply_delta_to_bbox_eval(bbox, delta):
-    """
-    Apply deltas for evaluation with hard clamp for safety
-    """
-    delta_clamped = torch.clamp(delta, -2, 2)
+    if training:
+        # 訓練時使用smooth clamp保持梯度連續性
+        delta_clamped = smooth_clamp(delta, -2, 2)
+    else:
+        # 推論時使用硬截斷以確保穩定性
+        delta_clamped = torch.clamp(delta, -2, 2)
     
     cx = bbox[:, 0] + delta_clamped[:, 0] * bbox[:, 2]
     cy = bbox[:, 1] + delta_clamped[:, 1] * bbox[:, 3]
     w = bbox[:, 2] * torch.exp(delta_clamped[:, 2])
     h = bbox[:, 3] * torch.exp(delta_clamped[:, 3])
     
-    cx = torch.clamp(cx, 0.05, 0.95)
-    cy = torch.clamp(cy, 0.05, 0.95)
-    w = torch.clamp(w, 0.01, 0.9)
-    h = torch.clamp(h, 0.01, 0.9)
+    if training:
+        # 訓練時使用smooth clamp保持梯度連續性
+        cx = smooth_clamp(cx, 0.05, 0.95)
+        cy = smooth_clamp(cy, 0.05, 0.95)
+        w = smooth_clamp(w, 0.01, 0.9)
+        h = smooth_clamp(h, 0.01, 0.9)
+    else:
+        # 推論時使用硬截斷
+        cx = torch.clamp(cx, 0.05, 0.95)
+        cy = torch.clamp(cy, 0.05, 0.95)
+        w = torch.clamp(w, 0.01, 0.9)
+        h = torch.clamp(h, 0.01, 0.9)
     
     return torch.stack([cx, cy, w, h], dim=-1)
+
+def apply_delta_to_bbox_eval(bbox, delta):
+    """
+    Apply deltas for evaluation with hard clamp for safety
+    Deprecated: Use apply_delta_to_bbox(bbox, delta, training=False) instead
+    """
+    import warnings
+    warnings.warn("apply_delta_to_bbox_eval is deprecated. Use apply_delta_to_bbox(bbox, delta, training=False) instead.", 
+                  DeprecationWarning, stacklevel=2)
+    return apply_delta_to_bbox(bbox, delta, training=False)
 
 def iou_metric(pred_boxes, target_boxes, eps=1e-6):
     """

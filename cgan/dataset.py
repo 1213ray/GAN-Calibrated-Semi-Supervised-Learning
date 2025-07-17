@@ -225,11 +225,18 @@ class CalibratorDataset(Dataset):
 
     @staticmethod
     def _bbox2delta(gt: torch.Tensor, pred: torch.Tensor) -> torch.Tensor:
-        """計算 Δ = (dx_rel, dy_rel, log dw, log dh)。"""
-        dx = (gt[0] - pred[0]) / (pred[2] + 1e-6)
-        dy = (gt[1] - pred[1]) / (pred[3] + 1e-6)
-        dw = math.log((gt[2] + 1e-6) / (pred[2] + 1e-6))
-        dh = math.log((gt[3] + 1e-6) / (pred[3] + 1e-6))
+        """計算 Δ = (dx_rel, dy_rel, log dw, log dh)。
+        使用改進的穩定歸一化方法。
+        """
+        # 使用較大的尺寸進行歸一化，提高穩定性
+        norm_factor = max(float(pred[2]), float(pred[3]), 0.1)
+        dx = (float(gt[0]) - float(pred[0])) / norm_factor
+        dy = (float(gt[1]) - float(pred[1])) / norm_factor
+        
+        # 使用log ratio，但加入穩定性項
+        dw = math.log(max(float(gt[2]), 1e-6) / max(float(pred[2]), 1e-6))
+        dh = math.log(max(float(gt[3]), 1e-6) / max(float(pred[3]), 1e-6))
+        
         return torch.tensor([dx, dy, dw, dh], dtype=torch.float32)
 
     @staticmethod
@@ -280,8 +287,8 @@ class CalibratorDataset(Dataset):
                 pred_box = pred_boxes[pred_idx]
                 gt_box = gt_boxes[gt_idx]
                 
-                # 計算改進的delta
-                delta = self._improved_bbox2delta(gt_box, pred_box)
+                # 計算delta使用統一的方法
+                delta = self._bbox2delta(gt_box, pred_box)
                 self.samples.append((img_path, 0, pred_box, delta, gt_box))
     
     def _load_boxes(self, txt_path: Path) -> torch.Tensor:
@@ -341,19 +348,6 @@ class CalibratorDataset(Dataset):
         
         return matches
     
-    @staticmethod
-    def _improved_bbox2delta(gt: torch.Tensor, pred: torch.Tensor) -> torch.Tensor:
-        """改進的delta計算，更穩定的歸一化"""
-        # 使用較大的尺寸進行歸一化
-        norm_factor = max(pred[2], pred[3], 0.1)
-        dx = (gt[0] - pred[0]) / norm_factor
-        dy = (gt[1] - pred[1]) / norm_factor
-        
-        # 使用log ratio，但加入穩定性項
-        dw = math.log(max(gt[2], 1e-6) / max(pred[2], 1e-6))
-        dh = math.log(max(gt[3], 1e-6) / max(pred[3], 1e-6))
-        
-        return torch.tensor([dx, dy, dw, dh], dtype=torch.float32)
 
     @staticmethod
     def _apply_delta_to_bbox(bbox: torch.Tensor, delta: torch.Tensor) -> torch.Tensor:
@@ -373,11 +367,8 @@ class CalibratorDataset(Dataset):
         img_path, _, pred_box, delta_true, gt_box = self.samples[idx]
         img = Image.open(img_path).convert("RGB")
 
-        # 使用存儲的原始 gt_box 確保數據一致性
-        # 重新計算 delta 以確保精確匹配
-        recalculated_delta = self._bbox2delta(gt_box, pred_box)
-        
-        # 使用原始的 gt_box 和 pred_box 裁切 patch
+        # 使用存儲的 delta 確保數據一致性
+        # 裁切 patch
         gt_patch = self._letterbox(img, gt_box, self.img_size)
         pred_patch = self._letterbox(img, pred_box, self.img_size)
 
@@ -385,5 +376,5 @@ class CalibratorDataset(Dataset):
         pred_patch = self.transform(pred_patch)
         gt_patch = self.transform(gt_patch)
         
-        # 返回重新計算的 delta 以確保一致性
-        return pred_patch, gt_patch, recalculated_delta, pred_box, str(img_path)
+        # 返回存儲的 delta，確保訓練一致性
+        return pred_patch, gt_patch, delta_true, pred_box, str(img_path)

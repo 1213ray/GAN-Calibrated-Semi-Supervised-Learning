@@ -14,6 +14,7 @@ import yaml
 from torch.utils.data import DataLoader, random_split
 from torchvision.utils import save_image
 import numpy as np
+import wandb
 
 # Setup path
 project_root = Path(__file__).parent
@@ -47,9 +48,8 @@ def get_refined_patch_batch(original_image_paths, pred_bboxes, deltas_pred, img_
         pred_box = pred_bboxes[i]
         delta = deltas_pred[i]
         
-        # 限制delta範圍防止數值爆炸
-        delta_clamped = torch.clamp(delta, -2, 2)
-        refined_box = apply_delta_to_bbox(pred_box.unsqueeze(0).cpu(), delta_clamped.unsqueeze(0).cpu()).squeeze(0)
+        # 限制delta範圍防止數值爆炸 (使用推論模式以確保穩定性)
+        refined_box = apply_delta_to_bbox(pred_box.unsqueeze(0).cpu(), delta.unsqueeze(0).cpu(), training=False).squeeze(0)
 
         try:
             img = Image.open(img_path).convert("RGB")
@@ -139,6 +139,43 @@ def main():
     print(f"Using hybrid loss: {args.use_hybrid_loss}")
     print(f"Using GIoU: {args.use_giou}")
 
+    # Initialize W&B
+    wandb_config = config.get('wandb', {})
+    if wandb_config.get('enabled', False):
+        wandb.init(
+            project=wandb_config.get('project', 'cgan-calibration'),
+            entity=wandb_config.get('entity'),
+            name=wandb_config.get('name'),
+            tags=wandb_config.get('tags', []),
+            notes=wandb_config.get('notes', ''),
+            config={
+                'img_size': args.img_size,
+                'batch_size': args.batch_size,
+                'n_epochs': args.n_epochs,
+                'lr': args.lr,
+                'beta1': args.beta1,
+                'beta2': args.beta2,
+                'lambda_l1': args.lambda_l1,
+                'lambda_iou': args.lambda_iou,
+                'use_giou': args.use_giou,
+                'use_hybrid_loss': args.use_hybrid_loss,
+                'spectral_norm': args.spectral_norm,
+                'delta_scale': args.delta_scale,
+                'generator_type': args.generator_type,
+                'patience': args.patience,
+                'min_delta': args.min_delta,
+                'train_split': args.train_split,
+                'val_split': args.val_split,
+                'seed': args.seed,
+                'd_train_ratio': args.d_train_ratio,
+                'data_dir': args.data_dir,
+                'device': str(device)
+            }
+        )
+        print("W&B initialized successfully!")
+    else:
+        print("W&B disabled in config")
+
     # Load dataset
     full_dataset = CalibratorDataset(args.data_dir, img_size=args.img_size)
     val_len = max(1, int(args.val_split * len(full_dataset)))
@@ -157,6 +194,19 @@ def main():
     
     print(f"Generator parameters: {sum(p.numel() for p in netG.parameters()):,}")
     print(f"Discriminator parameters: {sum(p.numel() for p in netD.parameters()):,}")
+
+    # Log model info to W&B
+    if wandb_config.get('enabled', False):
+        wandb.log({
+            'model/generator_params': sum(p.numel() for p in netG.parameters()),
+            'model/discriminator_params': sum(p.numel() for p in netD.parameters()),
+            'dataset/train_samples': len(train_set),
+            'dataset/val_samples': len(val_set),
+            'dataset/total_samples': len(full_dataset)
+        })
+        # Watch models for gradient and parameter tracking
+        wandb.watch(netG, log='all', log_freq=100)
+        wandb.watch(netD, log='all', log_freq=100)
 
     # Loss functions
     criterion_GAN = nn.BCEWithLogitsLoss()
@@ -245,9 +295,9 @@ def main():
             
             delta_pred = netG(pred_patch)
             
-            # Calculate calibrated boxes
-            calibrated_boxes = apply_delta_to_bbox(pred_box, delta_pred)
-            gt_boxes = apply_delta_to_bbox(pred_box, delta_true)
+            # Calculate calibrated boxes (使用訓練模式)
+            calibrated_boxes = apply_delta_to_bbox(pred_box, delta_pred, training=True)
+            gt_boxes = apply_delta_to_bbox(pred_box, delta_true, training=True)
             
             if args.use_hybrid_loss:
                 # Use enhanced hybrid loss
@@ -290,7 +340,17 @@ def main():
             if i == 0 and epoch % 10 == 1:
                 try:
                     img_sample = torch.cat((pred_patch.data[:4], refined_patch_for_G.data[:4], gt_patch.data[:4]), -2)
-                    save_image(img_sample, out_root / f"samples/epoch_{epoch}.png", nrow=4, normalize=True)
+                    sample_path = out_root / f"samples/epoch_{epoch}.png"
+                    save_image(img_sample, sample_path, nrow=4, normalize=True)
+                    
+                    # Log sample images to W&B
+                    if wandb_config.get('enabled', False):
+                        wandb.log({
+                            "samples/training_images": wandb.Image(
+                                str(sample_path),
+                                caption=f"Epoch {epoch}: Pred | Refined | GT"
+                            )
+                        })
                 except Exception as e:
                     print(f"Warning: Could not save sample image: {e}")
 
@@ -307,8 +367,9 @@ def main():
                 
                 delta_pred_val = netG(pred_patch_val)
 
-                calibrated_boxes = apply_delta_to_bbox(pred_box_val, delta_pred_val)
-                gt_boxes = apply_delta_to_bbox(pred_box_val, delta_true_val)
+                # 驗證時使用推論模式
+                calibrated_boxes = apply_delta_to_bbox(pred_box_val, delta_pred_val, training=False)
+                gt_boxes = apply_delta_to_bbox(pred_box_val, delta_true_val, training=False)
 
                 iou_before = iou_metric(pred_box_val, gt_boxes)
                 iou_after = iou_metric(calibrated_boxes, gt_boxes)
@@ -350,10 +411,35 @@ def main():
               f"ΔIoU: {delta_iou:.4f} "
               f"Before: {mean_iou_before:.4f} "
               f"After: {mean_iou_after:.4f}")
+
+        # Log metrics to W&B
+        if wandb_config.get('enabled', False):
+            log_dict = {
+                'epoch': epoch,
+                'train/loss_G': epoch_stats['loss_G'],
+                'train/loss_D': epoch_stats['loss_D'],
+                'train/loss_iou': epoch_stats['loss_iou'],
+                'train/loss_l1': epoch_stats['loss_l1'],
+                'train/loss_gan': epoch_stats['loss_gan'],
+                'val/delta_iou': delta_iou,
+                'val/mean_iou_before': mean_iou_before,
+                'val/mean_iou_after': mean_iou_after,
+                'val/improvement': delta_iou,
+                'learning_rate/generator': optimizer_G.param_groups[0]['lr'],
+                'learning_rate/discriminator': optimizer_D.param_groups[0]['lr']
+            }
+            
+            # Add focal loss if available
+            if 'loss_focal' in epoch_stats:
+                log_dict['train/loss_focal'] = epoch_stats['loss_focal']
+            
+            wandb.log(log_dict)
         
         # 檢查是否有數值問題
-        if torch.isnan(torch.tensor([epoch_stats['loss_G'], epoch_stats['loss_D']])).any():
-            print("Warning: NaN detected in losses! Stopping training.")
+        loss_tensor = torch.tensor([epoch_stats['loss_G'], epoch_stats['loss_D']], dtype=torch.float32)
+        if torch.isnan(loss_tensor).any() or torch.isinf(loss_tensor).any():
+            print(f"Warning: NaN or Inf detected in losses! G: {epoch_stats['loss_G']:.6f}, D: {epoch_stats['loss_D']:.6f}")
+            print("Stopping training to prevent further instability.")
             break
 
         # Early stopping with improved criteria
@@ -368,6 +454,13 @@ def main():
             }, ckpt_best)
             epochs_no_improve = 0
             print(f"New best model saved! Delta IoU = {best_val_iou:.4f}")
+            
+            # Log best model to W&B
+            if wandb_config.get('enabled', False):
+                wandb.log({
+                    'best_model/delta_iou': best_val_iou,
+                    'best_model/epoch': epoch
+                })
         else:
             epochs_no_improve += 1
             if epochs_no_improve >= args.patience:
@@ -381,6 +474,46 @@ def main():
 
     print(f"Training complete. Best Delta IoU = {best_val_iou:.4f}")
     print(f"Model saved to: {ckpt_best}")
+
+    # Final W&B logging and artifact saving
+    if wandb_config.get('enabled', False):
+        # Log final metrics
+        wandb.log({
+            'final/best_delta_iou': best_val_iou,
+            'final/total_epochs': epoch,
+            'final/early_stopped': epochs_no_improve >= args.patience
+        })
+        
+        # Save model artifacts
+        model_artifact = wandb.Artifact(
+            name=f"cgan_model_{wandb.run.id}",
+            type="model",
+            description="Best CGAN model for pseudo-label calibration"
+        )
+        model_artifact.add_file(str(ckpt_best))
+        wandb.log_artifact(model_artifact)
+        
+        # Save training history
+        history_artifact = wandb.Artifact(
+            name=f"training_history_{wandb.run.id}",
+            type="dataset",
+            description="Training history and metrics"
+        )
+        history_artifact.add_file(str(out_root / "training_history.json"))
+        wandb.log_artifact(history_artifact)
+        
+        # Save sample images
+        if (out_root / "samples").exists():
+            samples_artifact = wandb.Artifact(
+                name=f"training_samples_{wandb.run.id}",
+                type="dataset",
+                description="Sample images during training"
+            )
+            samples_artifact.add_dir(str(out_root / "samples"))
+            wandb.log_artifact(samples_artifact)
+        
+        print("W&B artifacts saved successfully!")
+        wandb.finish()
 
 if __name__ == "__main__":
     main()

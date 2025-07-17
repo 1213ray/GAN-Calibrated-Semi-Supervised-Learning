@@ -1,35 +1,4 @@
 
-"""cGAN Patch-Calibrator  —  程式碼庫 (步驟 1-4/5)
-=================================================
-此畫布現在包含 **四個 Python 模組**：
-  • *models.py*          — 生成器 + 判別器 (步驟 1)
-  • *cgan_datasets.py*   — 產生訓練元組的資料集 (步驟 2)
-  • *train_cgan.py*      — 完整訓練迴圈 (步驟 3)
-  • *inference.py*       — 單圖像校準器 (步驟 4)  ← **新增**
-剩餘步驟：
-  • README.md / config   — 使用文件與超參數 (步驟 5)
-
-所有模組都保留在單一畫布中，以便於內聯編輯，但可以一對一地另存為單獨的 .py 檔案。
-"""
-
-# =================================================
-# models.py  —  Generator & PatchGAN Discriminator
-# =================================================
-# [... 现有 models.py 内容保持不变 ...]
-
-# =================================================
-# cgan_datasets.py  —  CalibratorDataset & utils
-# =================================================
-# [... 现有 cgan_datasets.py 内容保持不变 ...]
-
-# =================================================
-# train_cgan.py  —  Training script
-# =================================================
-# [... 现有 train_cgan.py 内容保持不变 ...]
-
-# =================================================
-# inference.py  —  Single-image calibration utility
-# =================================================
 """使用訓練好的生成器校準單張 JPEG/PNG 圖像上的偽標籤。
 
 範例
@@ -53,7 +22,7 @@ from torchvision import transforms
 from PIL import Image, ImageOps
 
 # 同資料夾匯入
-from models import GeneratorUNet
+from models import GeneratorUNet, GeneratorSimpleRegressor
 
 # ------------------  helpers  ------------------
 
@@ -101,10 +70,20 @@ def apply_delta_to_bbox_inference(bbox: List[float], delta: torch.Tensor) -> Lis
     """將預測的 delta 應用於原始 bbox。"""
     cx, cy, w, h = bbox[:4]
     delta_np = delta.numpy()
-    cx_new = cx + delta_np[0] * w
-    cy_new = cy + delta_np[1] * h
+    
+    # 使用正確的歸一化方法（與dataset.py中一致）
+    norm_factor = max(w, h, 0.1)
+    cx_new = cx + delta_np[0] * norm_factor
+    cy_new = cy + delta_np[1] * norm_factor
     w_new  = w * math.exp(delta_np[2])
     h_new  = h * math.exp(delta_np[3])
+    
+    # 限制結果在合理範圍內
+    cx_new = max(0.05, min(0.95, cx_new))
+    cy_new = max(0.05, min(0.95, cy_new))
+    w_new = max(0.01, min(0.9, w_new))
+    h_new = max(0.01, min(0.9, h_new))
+    
     return [cx_new, cy_new, w_new, h_new]
 
 # ------------------  main  ------------------
@@ -121,15 +100,50 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # 載入模型
-    # 從權重檔名中自動推斷 delta_scale (如果存在)
+    # 嘗試從模型檔案中載入完整的配置資訊
     try:
-        delta_scale = float(Path(args.weights).stem.split('=')[-1])
-    except (ValueError, IndexError):
-        delta_scale = 0.25 # 預設值
-        print(f"警告：無法從檔名推斷 delta_scale，使用預設值 {delta_scale}")
+        checkpoint = torch.load(args.weights, map_location=device)
+        if isinstance(checkpoint, dict) and 'config' in checkpoint:
+            # 從模型檔案中載入配置
+            model_config = checkpoint['config']
+            delta_scale = model_config.get('delta_scale', 0.25)
+            generator_type = model_config.get('generator_type', 'unet')
+            print(f"從模型檔案載入配置: delta_scale={delta_scale}, generator_type={generator_type}")
+        else:
+            # 嘗試從檔名推斷 delta_scale
+            try:
+                delta_scale = float(Path(args.weights).stem.split('=')[-1])
+                generator_type = 'unet'
+                print(f"從檔名推斷 delta_scale: {delta_scale}")
+            except (ValueError, IndexError):
+                delta_scale = 0.25
+                generator_type = 'unet'
+                print(f"警告：無法推斷配置，使用預設值 delta_scale={delta_scale}")
+    except Exception as e:
+        print(f"警告：載入模型檔案時出錯: {e}")
+        delta_scale = 0.25
+        generator_type = 'unet'
+        checkpoint = None
 
-    netG = GeneratorUNet(delta_scale=delta_scale).to(device)
-    netG.load_state_dict(torch.load(args.weights, map_location=device))
+    # 創建模型
+    if generator_type == 'simple':
+        from models import GeneratorSimpleRegressor
+        netG = GeneratorSimpleRegressor(delta_scale=delta_scale).to(device)
+    else:
+        netG = GeneratorUNet(delta_scale=delta_scale).to(device)
+    
+    # 載入模型權重
+    try:
+        if isinstance(checkpoint, dict) and 'generator' in checkpoint:
+            netG.load_state_dict(checkpoint['generator'])
+        elif isinstance(checkpoint, dict):
+            netG.load_state_dict(checkpoint)
+        else:
+            netG.load_state_dict(torch.load(args.weights, map_location=device))
+    except Exception as e:
+        print(f"錯誤：載入模型權重時出錯: {e}")
+        return
+    
     netG.eval()
 
     # 載入圖像和預測

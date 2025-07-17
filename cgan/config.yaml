@@ -3,7 +3,7 @@
 # config.yaml  —  Enhanced hyper‑parameters
 # =================================================
 img_size: 128 # 圖像大小
-batch_size: 32 # 批次大小 (降低以處理更複雜的數據)
+batch_size: 128 # 批次大小 (降低以處理更複雜的數據)
 n_epochs: 100 # 訓練 epoch 數量
 lr: 0.0001 # 學習率 (降低以獲得更穩定的訓練)
 beta1: 0.5 # Adam 優化器參數 beta1
@@ -16,10 +16,10 @@ use_giou: true # 是否使用 GIoU 而不是 IoU
 use_hybrid_loss: true # 是否使用混合損失函數
 
 spectral_norm: true # 是否使用譜範數
-delta_scale: 0.2 # delta 縮放因子 (進一步降低以減少過度校正)
-generator_type: "simple" # 生成器類型: "unet" 或 "simple" (回到simple類型)
+delta_scale: 0.3 # delta 縮放因子 (進一步降低以減少過度校正)
+generator_type: "unet" # 生成器類型: "unet" 或 "simple" (回到simple類型)
 early_stop: # 早停設定
-  patience: 20 # 早停耐心值 (增加耐心)
+  patience: 15 # 早停耐心值 (增加耐心)
   min_delta: 2.0e-5 # 早停最小 delta (進一步降低閾值)
 train_split: 0.9 # 訓練集分割比例
 val_split: 0.1 # 驗證集分割比例
@@ -29,5 +29,14 @@ seed: 42 # 隨機種子
 d_train_ratio: 1 # 每 N 個批次訓練一次判別器 (提高訓練頻率)
 iou_threshold: 0.25 # IoU 閾值用於匹配預測框與真實框 (降低以獲得更多樣本)
 data_dir: ../datasets/500_100_100/cgan # 資料集根目錄路徑
+
+# W&B configuration
+wandb:
+  enabled: true
+  project: "cgan-calibration"
+  entity: null  # 可以設置為你的wandb username
+  name: null  # 會自動生成run名稱
+  tags: ["cgan", "pseudo-label", "calibration"]
+  notes: "CGAN training for pseudo-label calibration"
 
 

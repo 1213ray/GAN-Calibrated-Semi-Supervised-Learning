@@ -1,0 +1,9 @@
+W&B initialized successfully!
+Training samples: 2606, Validation samples: 289
+Generator parameters: 6,294,788
+Discriminator parameters: 2,767,808
+Starting enhanced training...
+[Epoch 1/100] G: 4.625 D: 0.729 IoU: 1.183 L1: 0.029 GAN: 0.957 ΔIoU: 0.0247 Before: 0.0392 After: 0.0640
+New best model saved! Delta IoU = 0.0247
+[Epoch 2/100] G: 4.507 D: 0.566 IoU: 1.064 L1: 0.034 GAN: 1.192 ΔIoU: 0.0283 Before: 0.0392 After: 0.0675
+New best model saved! Delta IoU = 0.0283

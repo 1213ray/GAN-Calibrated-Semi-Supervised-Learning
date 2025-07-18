@@ -1,0 +1,37 @@
+W&B initialized successfully!
+Training samples: 2574, Validation samples: 286
+Generator parameters: 6,294,788
+Discriminator parameters: 2,767,808
+Using Pure EIoU Loss (lambda_iou=1.0)
+Starting enhanced training...
+[Epoch 1/100] G: 2.011 D: 1019.537 EIoU: 1.817 WGAN: 0.194 GP: 101.954 WD: 0.001 ΔIoU: -0.0021 Before: 0.6784 After: 0.6763
+New best model saved! Delta IoU = -0.0021
+[Epoch 2/100] G: 1.792 D: 0.710 EIoU: 1.762 WGAN: 0.030 GP: 0.071 WD: 0.001 ΔIoU: 0.0059 Before: 0.6784 After: 0.6842
+New best model saved! Delta IoU = 0.0059
+[Epoch 3/100] G: 1.783 D: 0.497 EIoU: 1.742 WGAN: 0.040 GP: 0.050 WD: 0.001 ΔIoU: 0.0064 Before: 0.6784 After: 0.6848
+New best model saved! Delta IoU = 0.0064
+[Epoch 4/100] G: 1.745 D: 0.397 EIoU: 1.746 WGAN: -0.000 GP: 0.040 WD: 0.003 ΔIoU: 0.0063 Before: 0.6784 After: 0.6846
+[Epoch 5/100] G: 1.795 D: 0.303 EIoU: 1.749 WGAN: 0.046 GP: 0.031 WD: 0.005 ΔIoU: 0.0064 Before: 0.6784 After: 0.6847
+[Epoch 6/100] G: 1.732 D: 0.673 EIoU: 1.751 WGAN: -0.019 GP: 0.068 WD: 0.007 ΔIoU: 0.0055 Before: 0.6784 After: 0.6838
+[Epoch 7/100] G: 1.712 D: 0.262 EIoU: 1.746 WGAN: -0.034 GP: 0.027 WD: 0.007 ΔIoU: 0.0058 Before: 0.6784 After: 0.6842
+[Epoch 8/100] G: 1.695 D: 0.225 EIoU: 1.737 WGAN: -0.041 GP: 0.023 WD: 0.010 ΔIoU: 0.0057 Before: 0.6784 After: 0.6840
+[Epoch 9/100] G: 1.687 D: 0.257 EIoU: 1.743 WGAN: -0.056 GP: 0.027 WD: 0.011 ΔIoU: 0.0056 Before: 0.6784 After: 0.6839
+[Epoch 10/100] G: 1.680 D: 0.163 EIoU: 1.737 WGAN: -0.057 GP: 0.018 WD: 0.013 ΔIoU: 0.0063 Before: 0.6784 After: 0.6846
+[Epoch 11/100] G: 1.661 D: 0.133 EIoU: 1.741 WGAN: -0.080 GP: 0.015 WD: 0.014 ΔIoU: 0.0062 Before: 0.6784 After: 0.6846
+[Epoch 12/100] G: 1.723 D: 0.147 EIoU: 1.742 WGAN: -0.020 GP: 0.016 WD: 0.016 ΔIoU: 0.0055 Before: 0.6784 After: 0.6839
+[Epoch 13/100] G: 1.697 D: 0.133 EIoU: 1.741 WGAN: -0.044 GP: 0.015 WD: 0.017 ΔIoU: 0.0062 Before: 0.6784 After: 0.6846
+[Epoch 14/100] G: 1.644 D: 0.124 EIoU: 1.722 WGAN: -0.078 GP: 0.014 WD: 0.019 ΔIoU: 0.0056 Before: 0.6784 After: 0.6839
+[Epoch 15/100] G: 1.669 D: 0.124 EIoU: 1.745 WGAN: -0.076 GP: 0.014 WD: 0.020 ΔIoU: 0.0058 Before: 0.6784 After: 0.6841
+[Epoch 16/100] G: 1.633 D: 0.107 EIoU: 1.734 WGAN: -0.100 GP: 0.013 WD: 0.021 ΔIoU: 0.0060 Before: 0.6784 After: 0.6844
+[Epoch 17/100] G: 1.673 D: 0.100 EIoU: 1.735 WGAN: -0.062 GP: 0.012 WD: 0.022 ΔIoU: 0.0059 Before: 0.6784 After: 0.6843
+[Epoch 18/100] G: 1.662 D: 0.095 EIoU: 1.730 WGAN: -0.068 GP: 0.012 WD: 0.024 ΔIoU: 0.0059 Before: 0.6784 After: 0.6843
+[Epoch 19/100] G: 1.643 D: 0.094 EIoU: 1.732 WGAN: -0.089 GP: 0.012 WD: 0.025 ΔIoU: 0.0057 Before: 0.6784 After: 0.6840
+[Epoch 20/100] G: 1.651 D: 0.092 EIoU: 1.738 WGAN: -0.087 GP: 0.012 WD: 0.027 ΔIoU: 0.0060 Before: 0.6784 After: 0.6843
+[Epoch 21/100] G: 1.634 D: 0.085 EIoU: 1.738 WGAN: -0.104 GP: 0.011 WD: 0.028 ΔIoU: 0.0061 Before: 0.6784 After: 0.6845
+[Epoch 22/100] G: 1.648 D: 0.078 EIoU: 1.727 WGAN: -0.079 GP: 0.011 WD: 0.031 ΔIoU: 0.0064 Before: 0.6784 After: 0.6847
+[Epoch 23/100] G: 1.631 D: 0.080 EIoU: 1.727 WGAN: -0.095 GP: 0.011 WD: 0.031 ΔIoU: 0.0062 Before: 0.6784 After: 0.6846
+Early stopping triggered.
+Training complete. Best Delta IoU = 0.0064
+Model saved to: runs\exp\G_best.pth
+[34m[1mwandb[0m: Adding directory to artifact (.\runs\exp\samples)... Done. 0.0s
+W&B artifacts saved successfully!

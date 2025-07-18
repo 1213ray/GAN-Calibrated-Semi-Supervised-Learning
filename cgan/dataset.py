@@ -265,7 +265,7 @@ class CalibratorDataset(Dataset):
     # ----------------  index samples ----------------
 
     def _prepare_index(self) -> None:
-        """使用改進的一對一匹配策略構建索引列表。"""
+        """使用多對一貪婪匹配策略構建索引列表。"""
         for txt_pred in sorted(self.pred_dir.glob("*.txt")):
             name = txt_pred.stem
             txt_gt = self.gt_dir / f"{name}.txt"
@@ -318,34 +318,29 @@ class CalibratorDataset(Dataset):
         return torch.tensor(boxes) if boxes else torch.empty((0, 4))
     
     def _hungarian_matching(self, pred_boxes: torch.Tensor, gt_boxes: torch.Tensor) -> List[Tuple[int, int]]:
-        """簡化的匈牙利匹配實現"""
+        """
+        多對一簡化匹配：每個 pred 獨立選 IoU 最大的 gt（允許一個 gt 被多次匹配）。
+        """
         if len(pred_boxes) == 0 or len(gt_boxes) == 0:
             return []
-        
-        # 計算IoU矩陣
-        iou_matrix = torch.zeros((len(pred_boxes), len(gt_boxes)))
-        for i, pred_box in enumerate(pred_boxes):
-            for j, gt_box in enumerate(gt_boxes):
-                iou_matrix[i, j] = self._bbox_iou(pred_box, gt_box)
-        
-        # 貪婪匹配（簡化版匈牙利演算法）
+
+        # 1. 計算 IoU 矩陣 (Np, Ng)
+        Np, Ng = len(pred_boxes), len(gt_boxes)
+        iou_matrix = torch.zeros((Np, Ng), device=pred_boxes.device)
+        for i, pb in enumerate(pred_boxes):
+            for j, gb in enumerate(gt_boxes):
+                iou_matrix[i, j] = self._bbox_iou(pb, gb)
+
+        # 2. 對每個 pred，找 IoU 最大的 gt
+        #    best_iou: (Np,), best_gt_idx: (Np,)
+        best_iou, best_gt_idx = iou_matrix.max(dim=1)
+
+        # 3. 按閾值篩選，允許同一個 gt 被多次選中
         matches = []
-        used_gt = set()
-        used_pred = set()
-        
-        # 按IoU降序排列
-        flat_indices = torch.argsort(iou_matrix.flatten(), descending=True)
-        
-        for flat_idx in flat_indices:
-            i = flat_idx // len(gt_boxes)
-            j = flat_idx % len(gt_boxes)
-            
-            if i.item() not in used_pred and j.item() not in used_gt:
-                if iou_matrix[i, j] > self.iou_thr:
-                    matches.append((i.item(), j.item()))
-                    used_pred.add(i.item())
-                    used_gt.add(j.item())
-        
+        for i in range(Np):
+            if best_iou[i] >= self.iou_thr:
+                matches.append((i, int(best_gt_idx[i])))
+
         return matches
     
 

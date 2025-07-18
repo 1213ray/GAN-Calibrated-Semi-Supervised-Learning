@@ -17,7 +17,7 @@ KFOLD 交叉偽標籤產生腳本
 
 # ────────────── 參數區 ──────────────
 YAML_PATH          = r"C:\Users\alian\PycharmProjects\yolov8\yaml\person.yaml"  # 原始資料 yaml
-PRETRAINED_WEIGHTS = r"C:\Users\alian\PycharmProjects\yolov8\models\yolov8s.pt" # 起始權重
+PRETRAINED_WEIGHTS = r"C:\Users\alian\PycharmProjects\yolov8\models\yolov8m.pt" # 起始權重
 OUTPUT_ROOT        = r"C:\Users\alian\PycharmProjects\yolov8\datasets\500_100_100\kfold" # 輸出根目錄
 
 KFOLDS             = 5      # 折數
@@ -27,8 +27,8 @@ PATIENCE           = 20
 IMG_SIZE           = 640    # 輸入解析度
 WORKERS            = 4      # Dataloader 執行緒
 DEVICE             = 0      # GPU id，CPU 請設為 "cpu"
-CONF_THR           = 0.2   # 偽標籤推論置信度下限
-IOU_NMS            = 0.7    # NMS IoU 上限
+CONF_THR           = 0.1   # 偽標籤推論置信度下限
+IOU_NMS            = 0.9    # NMS IoU 上限
 
 from pathlib import Path           # ★新增，後續用到
 

@@ -248,6 +248,7 @@ class Discriminator(nn.Module):
             *conv_block(128,256),
             *conv_block(256,512),
             # 最終卷積 (stride=1) → 對於 128×128 輸入，分數圖約為 14×14
+            # WGAN-GP 不使用 sigmoid，直接輸出 Wasserstein 距離
             nn.Conv2d(512, 1, 4, stride=1, padding=1, bias=False)
         ])
 

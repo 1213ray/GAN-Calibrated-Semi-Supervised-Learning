@@ -1,0 +1,13 @@
+{"time":"2025-07-18T18:38:15.9003961+08:00","level":"INFO","msg":"stream: starting","core version":"0.21.0"}
+{"time":"2025-07-18T18:38:16.1980538+08:00","level":"INFO","msg":"stream: created new stream","id":"3pffojdl"}
+{"time":"2025-07-18T18:38:16.1980538+08:00","level":"INFO","msg":"stream: started","id":"3pffojdl"}
+{"time":"2025-07-18T18:38:16.1980538+08:00","level":"INFO","msg":"handler: started","stream_id":"3pffojdl"}
+{"time":"2025-07-18T18:38:16.1980538+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"3pffojdl"}
+{"time":"2025-07-18T18:38:16.1980538+08:00","level":"INFO","msg":"sender: started","stream_id":"3pffojdl"}
+{"time":"2025-07-18T20:30:14.0202616+08:00","level":"INFO","msg":"handler: operation stats","stats":{"operations":[{"desc":"uploading artifact cgan_model_3pffojdl","runtime_seconds":1.4401799,"subtasks":[{"desc":"G_best.pth","runtime_seconds":0.3896904,"progress":"1.1MB/34.6MB"}]},{"desc":"uploading artifact training_history_3pffojdl","runtime_seconds":1.2432763,"subtasks":[{"desc":"training_history.json","runtime_seconds":0.3712847,"progress":"9.1KB/9.1KB"}]},{"desc":"uploading artifact training_samples_3pffojdl","runtime_seconds":1.0174995,"subtasks":[{"desc":"epoch_51.png","runtime_seconds":0.0906788,"progress":"32.0KB/173.1KB"},{"desc":"epoch_1.png","runtime_seconds":0.0906788,"progress":"64.0KB/150.3KB"},{"desc":"epoch_11.png","runtime_seconds":0.0906788,"progress":"16.0KB/133.3KB"},{"desc":"epoch_21.png","runtime_seconds":0.0906788,"progress":"16.0KB/140.6KB"},{"desc":"epoch_31.png","runtime_seconds":0.0906788,"progress":"16.0KB/150.3KB"},{"desc":"epoch_41.png","runtime_seconds":0.0901702,"progress":"16.0KB/182.1KB"}]}],"total_operations":3}}
+{"time":"2025-07-18T20:30:19.7301267+08:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-07-18T20:30:20.0954919+08:00","level":"INFO","msg":"stream: closing","id":"3pffojdl"}
+{"time":"2025-07-18T20:30:20.0954919+08:00","level":"INFO","msg":"handler: closed","stream_id":"3pffojdl"}
+{"time":"2025-07-18T20:30:20.0954919+08:00","level":"INFO","msg":"writer: Close: closed","stream_id":"3pffojdl"}
+{"time":"2025-07-18T20:30:20.0954919+08:00","level":"INFO","msg":"sender: closed","stream_id":"3pffojdl"}
+{"time":"2025-07-18T20:30:20.0954919+08:00","level":"INFO","msg":"stream: closed","id":"3pffojdl"}

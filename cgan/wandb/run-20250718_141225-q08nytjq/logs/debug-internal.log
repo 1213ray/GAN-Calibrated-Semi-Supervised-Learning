@@ -1,0 +1,13 @@
+{"time":"2025-07-18T14:12:25.3284227+08:00","level":"INFO","msg":"stream: starting","core version":"0.21.0"}
+{"time":"2025-07-18T14:12:25.6401301+08:00","level":"INFO","msg":"stream: created new stream","id":"q08nytjq"}
+{"time":"2025-07-18T14:12:25.6401301+08:00","level":"INFO","msg":"stream: started","id":"q08nytjq"}
+{"time":"2025-07-18T14:12:25.6401301+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"q08nytjq"}
+{"time":"2025-07-18T14:12:25.6401301+08:00","level":"INFO","msg":"handler: started","stream_id":"q08nytjq"}
+{"time":"2025-07-18T14:12:25.6401301+08:00","level":"INFO","msg":"sender: started","stream_id":"q08nytjq"}
+{"time":"2025-07-18T14:33:37.9160013+08:00","level":"INFO","msg":"handler: operation stats","stats":{"operations":[{"desc":"uploading artifact cgan_model_q08nytjq","runtime_seconds":1.4398681,"subtasks":[{"desc":"G_best.pth","runtime_seconds":0.2735614,"progress":"1.0MB/34.6MB"}]},{"desc":"uploading artifact training_history_q08nytjq","runtime_seconds":1.2238857},{"desc":"uploading artifact training_samples_q08nytjq","runtime_seconds":1.0044423},{"desc":"uploading config.yaml","runtime_seconds":0.2411379,"progress":"2.5KB/2.5KB"}],"total_operations":4}}
+{"time":"2025-07-18T14:33:44.1863037+08:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-07-18T14:33:44.400215+08:00","level":"INFO","msg":"stream: closing","id":"q08nytjq"}
+{"time":"2025-07-18T14:33:44.400215+08:00","level":"INFO","msg":"handler: closed","stream_id":"q08nytjq"}
+{"time":"2025-07-18T14:33:44.400215+08:00","level":"INFO","msg":"writer: Close: closed","stream_id":"q08nytjq"}
+{"time":"2025-07-18T14:33:44.400215+08:00","level":"INFO","msg":"sender: closed","stream_id":"q08nytjq"}
+{"time":"2025-07-18T14:33:44.400215+08:00","level":"INFO","msg":"stream: closed","id":"q08nytjq"}

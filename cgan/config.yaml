@@ -1,6 +1,6 @@
 
 # =================================================
-# config.yaml  —  Enhanced hyper‑parameters
+# config.yaml  —  Enhanced hyper‑parameters with WGAN-GP
 # =================================================
 img_size: 128 # 圖像大小
 batch_size: 128 # 批次大小 (降低以處理更複雜的數據)
@@ -30,6 +30,10 @@ seed: 42 # 隨機種子
 d_train_ratio: 1 # 每 N 個批次訓練一次判別器 (提高訓練頻率)
 iou_threshold: 0.25 # IoU 閾值用於匹配預測框與真實框 (降低以獲得更多樣本)
 data_dir: ../datasets/500_100_100/cgan # 資料集根目錄路徑
+
+# WGAN-GP 參數
+lambda_gp: 10.0 # 梯度懲罰權重
+n_critic: 1 # 每次生成器更新前的判別器訓練次數 (降低以平衡訓練)
 
 # W&B configuration
 wandb:

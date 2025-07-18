@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Pure EIoU Loss Functions for CGAN Calibration
-只包含EIoU相關的損失函數和工具函數
+Pure EIoU Loss Functions for CGAN Calibration with WGAN-GP
+只包含EIoU相關的損失函數和工具函數，使用 WGAN-GP 對抗損失
 """
 
 import torch
@@ -169,3 +169,53 @@ def iou_metric(pred_boxes, target_boxes, eps=1e-6):
     iou = inter_area / (union_area + eps)
     
     return iou
+
+def compute_gradient_penalty(discriminator, real_samples, fake_samples, device):
+    """
+    計算 WGAN-GP 的梯度懲罰項
+    Args:
+        discriminator: 判別器模型
+        real_samples: 真實樣本 (pred_patch, gt_patch)
+        fake_samples: 生成樣本 (pred_patch, refined_patch)
+        device: 計算設備
+    Returns:
+        gradient_penalty: 梯度懲罰項
+    """
+    batch_size = real_samples[0].size(0)
+    
+    # 隨機插值係數
+    alpha = torch.rand(batch_size, 1, 1, 1, device=device)
+    alpha = alpha.expand_as(real_samples[0])
+    
+    # 插值樣本
+    interpolated_pred = (alpha * real_samples[0] + (1 - alpha) * fake_samples[0]).detach()
+    interpolated_other = (alpha * real_samples[1] + (1 - alpha) * fake_samples[1]).detach()
+    
+    interpolated_pred.requires_grad_(True)
+    interpolated_other.requires_grad_(True)
+    
+    # 計算判別器對插值樣本的輸出
+    d_interpolated = discriminator(interpolated_pred, interpolated_other)
+    
+    # 計算梯度
+    gradients = torch.autograd.grad(
+        outputs=d_interpolated,
+        inputs=[interpolated_pred, interpolated_other],
+        grad_outputs=torch.ones_like(d_interpolated, device=device),
+        create_graph=True,
+        retain_graph=True,
+        only_inputs=True
+    )
+    
+    # 計算梯度的範數
+    gradients_pred = gradients[0].view(batch_size, -1)
+    gradients_other = gradients[1].view(batch_size, -1)
+    gradients_norm = torch.sqrt(
+        torch.sum(gradients_pred ** 2, dim=1) + 
+        torch.sum(gradients_other ** 2, dim=1) + 1e-12
+    )
+    
+    # 梯度懲罰 (目標梯度範數為 1)
+    gradient_penalty = torch.mean((gradients_norm - 1) ** 2)
+    
+    return gradient_penalty

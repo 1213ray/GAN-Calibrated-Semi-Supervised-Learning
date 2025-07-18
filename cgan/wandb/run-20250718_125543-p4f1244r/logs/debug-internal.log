@@ -1,0 +1,13 @@
+{"time":"2025-07-18T12:55:44.1750504+08:00","level":"INFO","msg":"stream: starting","core version":"0.21.0"}
+{"time":"2025-07-18T12:55:44.4791266+08:00","level":"INFO","msg":"stream: created new stream","id":"p4f1244r"}
+{"time":"2025-07-18T12:55:44.4791266+08:00","level":"INFO","msg":"stream: started","id":"p4f1244r"}
+{"time":"2025-07-18T12:55:44.4791266+08:00","level":"INFO","msg":"sender: started","stream_id":"p4f1244r"}
+{"time":"2025-07-18T12:55:44.4791266+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"p4f1244r"}
+{"time":"2025-07-18T12:55:44.4791266+08:00","level":"INFO","msg":"handler: started","stream_id":"p4f1244r"}
+{"time":"2025-07-18T13:36:39.4589454+08:00","level":"INFO","msg":"handler: operation stats","stats":{"operations":[{"desc":"uploading artifact cgan_model_p4f1244r","runtime_seconds":1.4418171,"subtasks":[{"desc":"G_best.pth","runtime_seconds":0.5038889,"progress":"1.1MB/34.6MB"}]},{"desc":"uploading artifact training_history_p4f1244r","runtime_seconds":1.2276056,"subtasks":[{"desc":"training_history.json","runtime_seconds":0.2806727,"progress":"15.6KB/15.6KB"}]},{"desc":"uploading artifact training_samples_p4f1244r","runtime_seconds":1.0070475,"subtasks":[{"desc":"epoch_21.png","runtime_seconds":0.1376352,"progress":"16.0KB/141.7KB"},{"desc":"epoch_31.png","runtime_seconds":0.1376352,"progress":"16.0KB/150.3KB"},{"desc":"epoch_41.png","runtime_seconds":0.1376352,"progress":"16.0KB/182.1KB"},{"desc":"epoch_51.png","runtime_seconds":0.1376352,"progress":"32.0KB/173.1KB"},{"desc":"epoch_1.png","runtime_seconds":0.1370102,"progress":"48.0KB/167.7KB"},{"desc":"epoch_11.png","runtime_seconds":0.1370102,"progress":"16.0KB/139.2KB"}]},{"desc":"uploading config.yaml","runtime_seconds":0.5328805,"progress":"2.5KB/2.5KB"}],"total_operations":4}}
+{"time":"2025-07-18T13:36:44.7220401+08:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-07-18T13:36:44.9997566+08:00","level":"INFO","msg":"stream: closing","id":"p4f1244r"}
+{"time":"2025-07-18T13:36:44.9997566+08:00","level":"INFO","msg":"handler: closed","stream_id":"p4f1244r"}
+{"time":"2025-07-18T13:36:44.9997566+08:00","level":"INFO","msg":"writer: Close: closed","stream_id":"p4f1244r"}
+{"time":"2025-07-18T13:36:44.9997566+08:00","level":"INFO","msg":"sender: closed","stream_id":"p4f1244r"}
+{"time":"2025-07-18T13:36:44.9997566+08:00","level":"INFO","msg":"stream: closed","id":"p4f1244r"}

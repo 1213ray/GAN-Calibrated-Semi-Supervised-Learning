@@ -21,7 +21,7 @@ project_root = Path(__file__).parent
 
 from models import GeneratorUNet, GeneratorSimpleRegressor, Discriminator, weights_init_normal
 from dataset import CalibratorDataset
-from losses import HybridLoss, apply_delta_to_bbox, iou_metric
+from losses import HybridLoss, apply_delta_to_bbox, iou_metric, compute_gradient_penalty
 
 def get_generator(generator_type, delta_scale):
     """根據配置選擇生成器類型"""
@@ -130,6 +130,8 @@ def main():
     parser.add_argument("--save_dir", type=str, default=config['save_dir'])
     parser.add_argument("--seed", type=int, default=config['seed'])
     parser.add_argument("--d_train_ratio", type=int, default=config['d_train_ratio'])
+    parser.add_argument("--lambda_gp", type=float, default=config.get('lambda_gp', 10.0))
+    parser.add_argument("--n_critic", type=int, default=config.get('n_critic', 5))
     args = parser.parse_args()
 
     torch.manual_seed(args.seed)
@@ -139,6 +141,8 @@ def main():
     print(f"Using Pure EIoU Loss: {args.use_eiou}")
     print(f"Loss weight - EIoU: {args.lambda_iou}")
     print(f"Delta scale: {args.delta_scale}")
+    print(f"WGAN-GP lambda: {args.lambda_gp}")
+    print(f"N-Critic: {args.n_critic}")
 
     # Initialize W&B
     wandb_config = config.get('wandb', {})
@@ -169,6 +173,8 @@ def main():
                 'val_split': args.val_split,
                 'seed': args.seed,
                 'd_train_ratio': args.d_train_ratio,
+                'lambda_gp': args.lambda_gp,
+                'n_critic': args.n_critic,
                 'data_dir': args.data_dir,
                 'device': str(device)
             }
@@ -209,13 +215,12 @@ def main():
         wandb.watch(netG, log='all', log_freq=100)
         wandb.watch(netD, log='all', log_freq=100)
 
-    # Loss functions
-    criterion_GAN = nn.BCEWithLogitsLoss()
+    # WGAN-GP 不需要 criterion_GAN，使用 Wasserstein 距離
     
     # Pure EIoU loss system
     criterion_hybrid = HybridLoss(lambda_iou=args.lambda_iou)
 
-    # Optimizers
+    # Optimizers - WGAN-GP 通常使用 Adam 或 RMSprop
     optimizer_G = optim.Adam(netG.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
     optimizer_D = optim.Adam(netD.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
 
@@ -243,9 +248,9 @@ def main():
             'loss_G': 0.0,
             'loss_D': 0.0,
             'loss_iou': 0.0,
-            'loss_gan': 0.0,
-            # Simplified - only core losses tracked
-            'fallback_count': 0
+            'loss_wgan': 0.0,
+            'loss_gp': 0.0,
+            'wasserstein_distance': 0.0
         }
         
         for i, (pred_patch, gt_patch, delta_true, pred_box, img_path) in enumerate(train_loader):
@@ -256,35 +261,42 @@ def main():
             pred_box = pred_box.to(device)
 
             batch_size = pred_patch.size(0)
-            
-            # Labels for discriminator
-            patch_size = netD(pred_patch, gt_patch).size()
-            valid = torch.ones(patch_size, device=device) * 0.9  # Label smoothing
-            fake = torch.zeros(patch_size, device=device) + 0.1  # Label smoothing
 
-            # Train Discriminator
-            if i % args.d_train_ratio == 0:
+            # Train Discriminator (Critic) - WGAN-GP 每個批次都要訓練判別器
+            for _ in range(args.n_critic):
                 optimizer_D.zero_grad()
 
-                # Real loss
-                pred_real = netD(pred_patch, gt_patch)
-                loss_real = criterion_GAN(pred_real, valid)
-
-                # Fake loss
+                # Real samples
+                real_validity = netD(pred_patch, gt_patch)
+                
+                # Fake samples
                 delta_pred_detached = netG(pred_patch).detach()
                 refined_patch = get_refined_patch_batch(
                     img_path, pred_box, delta_pred_detached, args.img_size, device, fallback_patches=pred_patch
                 )
-                pred_fake = netD(pred_patch, refined_patch)
-                loss_fake = criterion_GAN(pred_fake, fake)
+                fake_validity = netD(pred_patch, refined_patch)
                 
-                loss_D = (loss_real + loss_fake) * 0.5
-                loss_D.backward()
+                # Gradient penalty
+                gradient_penalty = compute_gradient_penalty(
+                    netD, 
+                    (pred_patch, gt_patch), 
+                    (pred_patch, refined_patch), 
+                    device
+                )
+                
+                # Wasserstein loss with gradient penalty
+                d_loss = torch.mean(fake_validity) - torch.mean(real_validity) + args.lambda_gp * gradient_penalty
+                d_loss.backward()
                 
                 # Gradient clipping
                 torch.nn.utils.clip_grad_norm_(netD.parameters(), max_norm=1.0)
                 optimizer_D.step()
-                epoch_stats['loss_D'] += loss_D.item()
+                
+                # Record losses (只記錄最後一次的損失值)
+                if _ == args.n_critic - 1:
+                    epoch_stats['loss_D'] += d_loss.item()
+                    epoch_stats['loss_gp'] += gradient_penalty.item()
+                    epoch_stats['wasserstein_distance'] += (torch.mean(real_validity) - torch.mean(fake_validity)).item()
 
             # Train Generator
             optimizer_G.zero_grad()
@@ -301,14 +313,14 @@ def main():
             )
             epoch_stats['loss_iou'] += loss_iou.item()
 
-            # Adversarial loss
+            # WGAN-GP 對抗損失 - 生成器要最大化判別器的輸出
             refined_patch_for_G = get_refined_patch_batch(
                 img_path, pred_box, delta_pred, args.img_size, device, fallback_patches=pred_patch
             )
-            pred_fake_for_G = netD(pred_patch, refined_patch_for_G)
-            loss_GAN_G = criterion_GAN(pred_fake_for_G, valid)
+            fake_validity_for_G = netD(pred_patch, refined_patch_for_G)
+            loss_WGAN_G = -torch.mean(fake_validity_for_G)  # 負號：最大化判別器輸出
 
-            loss_G = loss_G_reg + loss_GAN_G
+            loss_G = loss_G_reg + loss_WGAN_G
             loss_G.backward()
             
             # Gradient clipping
@@ -316,7 +328,7 @@ def main():
             optimizer_G.step()
 
             epoch_stats['loss_G'] += loss_G.item()
-            epoch_stats['loss_gan'] += loss_GAN_G.item()
+            epoch_stats['loss_wgan'] += loss_WGAN_G.item()
 
             # Save sample images occasionally
             if i == 0 and epoch % 10 == 1:
@@ -366,10 +378,7 @@ def main():
 
         # Calculate average losses
         for key in epoch_stats:
-            if key == 'loss_D':
-                epoch_stats[key] /= max(1, len(train_loader) // args.d_train_ratio)
-            else:
-                epoch_stats[key] /= len(train_loader)
+            epoch_stats[key] /= len(train_loader)
         
         # Update learning rate
         scheduler_G.step(delta_iou)
@@ -388,8 +397,9 @@ def main():
               f"G: {epoch_stats['loss_G']:.3f} "
               f"D: {epoch_stats['loss_D']:.3f} "
               f"EIoU: {epoch_stats['loss_iou']:.3f} "
-              f"GAN: {epoch_stats['loss_gan']:.3f} "
-              # Simplified output
+              f"WGAN: {epoch_stats['loss_wgan']:.3f} "
+              f"GP: {epoch_stats['loss_gp']:.3f} "
+              f"WD: {epoch_stats['wasserstein_distance']:.3f} "
               f"ΔIoU: {delta_iou:.4f} "
               f"Before: {mean_iou_before:.4f} "
               f"After: {mean_iou_after:.4f}")
@@ -401,8 +411,9 @@ def main():
                 'train/loss_G': epoch_stats['loss_G'],
                 'train/loss_D': epoch_stats['loss_D'],
                 'train/loss_iou': epoch_stats['loss_iou'],
-                'train/loss_gan': epoch_stats['loss_gan'],
-                # Simplified logging
+                'train/loss_wgan': epoch_stats['loss_wgan'],
+                'train/loss_gp': epoch_stats['loss_gp'],
+                'train/wasserstein_distance': epoch_stats['wasserstein_distance'],
                 'val/delta_iou': delta_iou,
                 'val/mean_iou_before': mean_iou_before,
                 'val/mean_iou_after': mean_iou_after,

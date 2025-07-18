@@ -1,0 +1,13 @@
+{"time":"2025-07-18T12:32:32.1408464+08:00","level":"INFO","msg":"stream: starting","core version":"0.21.0"}
+{"time":"2025-07-18T12:32:32.4492374+08:00","level":"INFO","msg":"stream: created new stream","id":"2wpb77vt"}
+{"time":"2025-07-18T12:32:32.4492374+08:00","level":"INFO","msg":"stream: started","id":"2wpb77vt"}
+{"time":"2025-07-18T12:32:32.4492374+08:00","level":"INFO","msg":"handler: started","stream_id":"2wpb77vt"}
+{"time":"2025-07-18T12:32:32.4492374+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"2wpb77vt"}
+{"time":"2025-07-18T12:32:32.4492374+08:00","level":"INFO","msg":"sender: started","stream_id":"2wpb77vt"}
+{"time":"2025-07-18T12:34:05.7220881+08:00","level":"INFO","msg":"handler: operation stats","stats":{"operations":[{"desc":"uploading artifact cgan_model_2wpb77vt","runtime_seconds":1.4581217,"subtasks":[{"desc":"G_best.pth","runtime_seconds":0.5935763,"progress":"1.1MB/34.6MB"}]},{"desc":"uploading artifact training_history_2wpb77vt","runtime_seconds":1.2589602,"subtasks":[{"desc":"training_history.json","runtime_seconds":0.3632042,"progress":"328B/328B"}]},{"desc":"uploading artifact training_samples_2wpb77vt","runtime_seconds":1.0157873,"subtasks":[{"desc":"epoch_31.png","runtime_seconds":0.1171039,"progress":"16.0KB/168.3KB"},{"desc":"epoch_41.png","runtime_seconds":0.1171039,"progress":"48.0KB/231.0KB"},{"desc":"epoch_51.png","runtime_seconds":0.1171039,"progress":"32.0KB/173.1KB"},{"desc":"epoch_1.png","runtime_seconds":0.1171039,"progress":"16.0KB/167.7KB"},{"desc":"epoch_11.png","runtime_seconds":0.1171039,"progress":"16.0KB/132.8KB"},{"desc":"epoch_21.png","runtime_seconds":0.1166016,"progress":"32.0KB/165.6KB"}]},{"desc":"uploading config.yaml","runtime_seconds":0.4505505,"progress":"2.6KB/2.6KB"}],"total_operations":4}}
+{"time":"2025-07-18T12:34:10.7587513+08:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-07-18T12:34:11.0851373+08:00","level":"INFO","msg":"stream: closing","id":"2wpb77vt"}
+{"time":"2025-07-18T12:34:11.0851373+08:00","level":"INFO","msg":"handler: closed","stream_id":"2wpb77vt"}
+{"time":"2025-07-18T12:34:11.0851373+08:00","level":"INFO","msg":"writer: Close: closed","stream_id":"2wpb77vt"}
+{"time":"2025-07-18T12:34:11.0851373+08:00","level":"INFO","msg":"sender: closed","stream_id":"2wpb77vt"}
+{"time":"2025-07-18T12:34:11.0851373+08:00","level":"INFO","msg":"stream: closed","id":"2wpb77vt"}

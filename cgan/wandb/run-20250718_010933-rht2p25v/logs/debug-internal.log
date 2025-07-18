@@ -1,0 +1,6 @@
+{"time":"2025-07-18T01:09:33.3229579+08:00","level":"INFO","msg":"stream: starting","core version":"0.21.0"}
+{"time":"2025-07-18T01:09:33.6356408+08:00","level":"INFO","msg":"stream: created new stream","id":"rht2p25v"}
+{"time":"2025-07-18T01:09:33.6356408+08:00","level":"INFO","msg":"stream: started","id":"rht2p25v"}
+{"time":"2025-07-18T01:09:33.6356408+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"rht2p25v"}
+{"time":"2025-07-18T01:09:33.6356408+08:00","level":"INFO","msg":"handler: started","stream_id":"rht2p25v"}
+{"time":"2025-07-18T01:09:33.6356408+08:00","level":"INFO","msg":"sender: started","stream_id":"rht2p25v"}

@@ -1,0 +1,41 @@
+Weights & Biases integration enabled.
+Using device: cuda
+Generator type: UnetGenerator
+Using hybrid loss: True
+Using GIoU: True
+Training samples: 2533, Validation samples: 281
+Using Vision Transformer (ViT) models.
+Generator parameters: 4,985,732
+Discriminator parameters: 5,939,457
+Starting enhanced training...
+[Epoch 1/100] G: 3.622 D: 0.553 IoU: 1.057 L1: 0.033 GAN: 1.388 ΔIoU: -0.0052 Before: 0.0388 After: 0.0336
+New best model saved! Delta IoU = -0.0052
+[Epoch 2/100] G: 3.716 D: 0.463 IoU: 1.034 L1: 0.038 GAN: 1.523 ΔIoU: 0.0465 Before: 0.0388 After: 0.0853
+New best model saved! Delta IoU = 0.0465
+[Epoch 3/100] G: 3.717 D: 0.444 IoU: 0.997 L1: 0.041 GAN: 1.597 ΔIoU: 0.0138 Before: 0.0388 After: 0.0526
+[Epoch 4/100] G: 3.857 D: 0.431 IoU: 1.025 L1: 0.041 GAN: 1.679 ΔIoU: 0.0482 Before: 0.0388 After: 0.0870
+New best model saved! Delta IoU = 0.0482
+[Epoch 5/100] G: 3.823 D: 0.422 IoU: 0.997 L1: 0.043 GAN: 1.701 ΔIoU: 0.0441 Before: 0.0388 After: 0.0829
+[Epoch 6/100] G: 3.839 D: 0.415 IoU: 0.994 L1: 0.043 GAN: 1.723 ΔIoU: 0.0446 Before: 0.0388 After: 0.0834
+[Epoch 7/100] G: 3.854 D: 0.412 IoU: 0.988 L1: 0.044 GAN: 1.750 ΔIoU: 0.0467 Before: 0.0388 After: 0.0855
+[Epoch 8/100] G: 3.850 D: 0.408 IoU: 0.982 L1: 0.044 GAN: 1.757 ΔIoU: 0.0484 Before: 0.0388 After: 0.0872
+New best model saved! Delta IoU = 0.0484
+[Epoch 9/100] G: 3.856 D: 0.407 IoU: 0.981 L1: 0.045 GAN: 1.764 ΔIoU: 0.0470 Before: 0.0388 After: 0.0858
+[Epoch 10/100] G: 3.902 D: 0.397 IoU: 0.979 L1: 0.045 GAN: 1.815 ΔIoU: 0.0472 Before: 0.0388 After: 0.0860
+[Epoch 11/100] G: 3.888 D: 0.400 IoU: 0.981 L1: 0.045 GAN: 1.798 ΔIoU: 0.0474 Before: 0.0388 After: 0.0862
+[Epoch 12/100] G: 3.902 D: 0.399 IoU: 0.979 L1: 0.045 GAN: 1.816 ΔIoU: 0.0432 Before: 0.0388 After: 0.0820
+[Epoch 13/100] G: 3.931 D: 0.393 IoU: 0.981 L1: 0.045 GAN: 1.840 ΔIoU: 0.0484 Before: 0.0388 After: 0.0872
+[Epoch 14/100] G: 3.955 D: 0.386 IoU: 0.982 L1: 0.045 GAN: 1.863 ΔIoU: 0.0470 Before: 0.0388 After: 0.0858
+[Epoch 15/100] G: 3.970 D: 0.383 IoU: 0.981 L1: 0.045 GAN: 1.880 ΔIoU: 0.0497 Before: 0.0388 After: 0.0885
+New best model saved! Delta IoU = 0.0497
+[Epoch 16/100] G: 3.975 D: 0.381 IoU: 0.979 L1: 0.045 GAN: 1.887 ΔIoU: 0.0486 Before: 0.0388 After: 0.0874
+[Epoch 17/100] G: 3.998 D: 0.376 IoU: 0.981 L1: 0.045 GAN: 1.906 ΔIoU: 0.0439 Before: 0.0388 After: 0.0827
+[Epoch 18/100] G: 4.009 D: 0.376 IoU: 0.981 L1: 0.045 GAN: 1.917 ΔIoU: 0.0490 Before: 0.0388 After: 0.0878
+[Epoch 19/100] G: 4.015 D: 0.375 IoU: 0.980 L1: 0.045 GAN: 1.925 ΔIoU: 0.0441 Before: 0.0388 After: 0.0829
+[Epoch 20/100] G: 4.018 D: 0.372 IoU: 0.980 L1: 0.045 GAN: 1.929 ΔIoU: 0.0487 Before: 0.0388 After: 0.0875
+[Epoch 21/100] G: 4.022 D: 0.371 IoU: 0.980 L1: 0.045 GAN: 1.933 ΔIoU: 0.0491 Before: 0.0388 After: 0.0879
+[Epoch 22/100] G: 4.021 D: 0.370 IoU: 0.979 L1: 0.046 GAN: 1.935 ΔIoU: 0.0467 Before: 0.0388 After: 0.0855
+[Epoch 23/100] G: 4.048 D: 0.362 IoU: 0.978 L1: 0.045 GAN: 1.962 ΔIoU: 0.0438 Before: 0.0388 After: 0.0826
+[Epoch 24/100] G: 4.045 D: 0.366 IoU: 0.979 L1: 0.045 GAN: 1.957 ΔIoU: 0.0447 Before: 0.0388 After: 0.0835
+[Epoch 25/100] G: 4.062 D: 0.362 IoU: 0.978 L1: 0.046 GAN: 1.976 ΔIoU: 0.0425 Before: 0.0388 After: 0.0813
+[Epoch 26/100] G: 4.061 D: 0.361 IoU: 0.980 L1: 0.046 GAN: 1.972 ΔIoU: 0.0485 Before: 0.0388 After: 0.0874

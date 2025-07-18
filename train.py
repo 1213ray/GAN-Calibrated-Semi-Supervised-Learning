@@ -14,7 +14,7 @@ if __name__ == '__main__':
         imgsz=640,
         epochs=400,
         patience=20,
-        batch=16,
+        batch=32,
         workers=4,  # 啟用 12 個子進程來加載數據，您可以根據 CPU 核心數調整
         half=True, # 啟用混合精度訓練
         project='result',

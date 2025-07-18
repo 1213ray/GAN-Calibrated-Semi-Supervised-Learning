@@ -1,0 +1,101 @@
+_wandb:
+    value:
+        cli_version: 0.21.0
+        e:
+            s53v8msfcbhbwh6fmpjzcvza4vzjxnb3:
+                args:
+                    - --n_epochs
+                    - "1"
+                    - --batch_size
+                    - "4"
+                codePath: cgan\cgan_train_enhanced.py
+                codePathLocal: cgan_train_enhanced.py
+                cpu_count: 6
+                cpu_count_logical: 12
+                cudaVersion: "12.9"
+                disk:
+                    /:
+                        total: "999554600960"
+                        used: "207682580480"
+                email: 20031213ray@gmail.com
+                executable: C:\Users\alian\PycharmProjects\yolov8\.venv\Scripts\python.exe
+                git:
+                    commit: 5c6dc04d5b2b99060b139eaef49800fa4246ca0a
+                    remote: https://github.com/1213ray/pix2pix_CGAN.git
+                gpu: NVIDIA GeForce RTX 2070
+                gpu_count: 1
+                gpu_nvidia:
+                    - architecture: Turing
+                      cudaCores: 2304
+                      memoryTotal: "8589934592"
+                      name: NVIDIA GeForce RTX 2070
+                      uuid: GPU-58a9a48c-b155-5b7f-9364-6c87ceeb3c6a
+                host: DESKTOP-9HN4S50
+                memory:
+                    total: "34266636288"
+                os: Windows-10-10.0.19045-SP0
+                program: C:\Users\alian\PycharmProjects\yolov8\cgan\cgan_train_enhanced.py
+                python: CPython 3.13.5
+                root: C:\Users\alian\PycharmProjects\yolov8\cgan
+                startedAt: "2025-07-18T04:48:35.757940Z"
+                writerId: s53v8msfcbhbwh6fmpjzcvza4vzjxnb3
+        m: []
+        python_version: 3.13.5
+        t:
+            "1":
+                - 1
+                - 41
+            "2":
+                - 1
+                - 41
+            "3":
+                - 1
+                - 2
+                - 15
+                - 16
+            "4": 3.13.5
+            "5": 0.21.0
+            "8":
+                - 3
+            "12": 0.21.0
+            "13": windows-amd64
+batch_size:
+    value: 4
+beta1:
+    value: 0.5
+beta2:
+    value: 0.999
+d_train_ratio:
+    value: 1
+data_dir:
+    value: ../datasets/500_100_100/cgan
+delta_scale:
+    value: 0.2
+device:
+    value: cuda
+generator_type:
+    value: unet
+img_size:
+    value: 128
+lambda_iou:
+    value: 1
+lr:
+    value: 0.0001
+min_delta:
+    value: 1e-05
+n_epochs:
+    value: 1
+patience:
+    value: 20
+seed:
+    value: 42
+spectral_norm:
+    value: true
+train_split:
+    value: 0.9
+use_eiou:
+    value: true
+use_pure_eiou:
+    value: true
+val_split:
+    value: 0.1

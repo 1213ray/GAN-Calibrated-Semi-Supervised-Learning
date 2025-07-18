@@ -1,0 +1,13 @@
+W&B initialized successfully!
+Training samples: 2606, Validation samples: 289
+Generator parameters: 6,294,788
+Discriminator parameters: 2,767,808
+Starting enhanced training...
+Traceback (most recent call last):
+  File "C:\Users\alian\PycharmProjects\yolov8\cgan\cgan_train_enhanced.py", line 549, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\alian\PycharmProjects\yolov8\cgan\cgan_train_enhanced.py", line 318, in main
+    epoch_stats['loss_size'] += loss_size.item()
+    ~~~~~~~~~~~^^^^^^^^^^^^^
+KeyError: 'loss_size'

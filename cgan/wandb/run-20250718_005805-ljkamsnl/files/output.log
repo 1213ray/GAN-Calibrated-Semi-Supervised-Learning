@@ -1,0 +1,18 @@
+Weights & Biases integration enabled.
+Using device: cuda
+Generator type: UnetGenerator
+Using hybrid loss: True
+Using GIoU: True
+Training samples: 2533, Validation samples: 281
+Using Vision Transformer (ViT) models.
+Generator parameters: 4,985,732
+Discriminator parameters: 5,939,457
+Starting enhanced training...
+Traceback (most recent call last):
+  File "C:\Users\alian\PycharmProjects\yolov8\cgan\cgan_train_wandb.py", line 399, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\alian\PycharmProjects\yolov8\cgan\cgan_train_wandb.py", line 272, in main
+    loss_G_reg, loss_iou, loss_l1 = criterion_hybrid(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: too many values to unpack (expected 3)

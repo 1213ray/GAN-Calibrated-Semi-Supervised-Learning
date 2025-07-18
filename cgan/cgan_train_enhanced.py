@@ -116,10 +116,10 @@ def main():
     parser.add_argument("--lr", type=float, default=config['lr'])
     parser.add_argument("--beta1", type=float, default=config['beta1'])
     parser.add_argument("--beta2", type=float, default=config['beta2'])
-    parser.add_argument("--lambda_l1", type=float, default=config['lambda_l1'])
     parser.add_argument("--lambda_iou", type=float, default=config['lambda_iou'])
-    parser.add_argument("--use_giou", action='store_true', default=config['use_giou'])
-    parser.add_argument("--use_hybrid_loss", action='store_true', default=config['use_hybrid_loss'])
+    # Pure EIoU configuration (simplified)
+    parser.add_argument("--use_eiou", action='store_true', default=config.get('use_eiou', True))
+    parser.add_argument("--pure_eiou", action='store_true', default=config.get('pure_eiou', True))
     parser.add_argument("--spectral_norm", action='store_true', default=config['spectral_norm'])
     parser.add_argument("--delta_scale", type=float, default=config['delta_scale'])
     parser.add_argument("--generator_type", type=str, default=config['generator_type'])
@@ -136,8 +136,9 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
     print(f"Generator type: {args.generator_type}")
-    print(f"Using hybrid loss: {args.use_hybrid_loss}")
-    print(f"Using GIoU: {args.use_giou}")
+    print(f"Using Pure EIoU Loss: {args.use_eiou}")
+    print(f"Loss weight - EIoU: {args.lambda_iou}")
+    print(f"Delta scale: {args.delta_scale}")
 
     # Initialize W&B
     wandb_config = config.get('wandb', {})
@@ -155,10 +156,10 @@ def main():
                 'lr': args.lr,
                 'beta1': args.beta1,
                 'beta2': args.beta2,
-                'lambda_l1': args.lambda_l1,
                 'lambda_iou': args.lambda_iou,
-                'use_giou': args.use_giou,
-                'use_hybrid_loss': args.use_hybrid_loss,
+                # Removed complex constraint parameters
+                'use_eiou': args.use_eiou,
+                'use_pure_eiou': args.pure_eiou,
                 'spectral_norm': args.spectral_norm,
                 'delta_scale': args.delta_scale,
                 'generator_type': args.generator_type,
@@ -211,15 +212,8 @@ def main():
     # Loss functions
     criterion_GAN = nn.BCEWithLogitsLoss()
     
-    if args.use_hybrid_loss:
-        criterion_hybrid = HybridLoss(
-            lambda_iou=args.lambda_iou,
-            lambda_l1=args.lambda_l1,
-            lambda_focal=0.5,
-            use_giou=args.use_giou
-        )
-    else:
-        criterion_L1 = nn.SmoothL1Loss()
+    # Pure EIoU loss system
+    criterion_hybrid = HybridLoss(lambda_iou=args.lambda_iou)
 
     # Optimizers
     optimizer_G = optim.Adam(netG.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
@@ -243,12 +237,14 @@ def main():
         netG.train()
         netD.train()
         
+        # Pure EIoU loss doesn't need epoch setting
+        
         epoch_stats = {
             'loss_G': 0.0,
             'loss_D': 0.0,
             'loss_iou': 0.0,
-            'loss_l1': 0.0,
             'loss_gan': 0.0,
+            # Simplified - only core losses tracked
             'fallback_count': 0
         }
         
@@ -299,25 +295,11 @@ def main():
             calibrated_boxes = apply_delta_to_bbox(pred_box, delta_pred, training=True)
             gt_boxes = apply_delta_to_bbox(pred_box, delta_true, training=True)
             
-            if args.use_hybrid_loss:
-                # Use enhanced hybrid loss
-                result = criterion_hybrid(
-                    delta_pred, delta_true, calibrated_boxes, gt_boxes
-                )
-                if len(result) == 4:
-                    loss_G_reg, loss_iou, loss_l1, loss_focal = result
-                    epoch_stats['loss_focal'] = epoch_stats.get('loss_focal', 0) + loss_focal.item()
-                else:
-                    loss_G_reg, loss_iou, loss_l1 = result
-                    epoch_stats['loss_focal'] = epoch_stats.get('loss_focal', 0)
-                
-                epoch_stats['loss_iou'] += loss_iou.item()
-                epoch_stats['loss_l1'] += loss_l1.item()
-            else:
-                # Use traditional L1 loss
-                loss_G_reg = criterion_L1(delta_pred, delta_true) * args.lambda_l1
-                epoch_stats['loss_l1'] += loss_G_reg.item()
-                epoch_stats['loss_focal'] = epoch_stats.get('loss_focal', 0)
+            # Use Pure EIoU loss
+            loss_G_reg, loss_iou = criterion_hybrid(
+                delta_pred, delta_true, calibrated_boxes, gt_boxes
+            )
+            epoch_stats['loss_iou'] += loss_iou.item()
 
             # Adversarial loss
             refined_patch_for_G = get_refined_patch_batch(
@@ -405,9 +387,9 @@ def main():
         print(f"[Epoch {epoch}/{args.n_epochs}] "
               f"G: {epoch_stats['loss_G']:.3f} "
               f"D: {epoch_stats['loss_D']:.3f} "
-              f"IoU: {epoch_stats['loss_iou']:.3f} "
-              f"L1: {epoch_stats['loss_l1']:.3f} "
+              f"EIoU: {epoch_stats['loss_iou']:.3f} "
               f"GAN: {epoch_stats['loss_gan']:.3f} "
+              # Simplified output
               f"ΔIoU: {delta_iou:.4f} "
               f"Before: {mean_iou_before:.4f} "
               f"After: {mean_iou_after:.4f}")
@@ -419,8 +401,8 @@ def main():
                 'train/loss_G': epoch_stats['loss_G'],
                 'train/loss_D': epoch_stats['loss_D'],
                 'train/loss_iou': epoch_stats['loss_iou'],
-                'train/loss_l1': epoch_stats['loss_l1'],
                 'train/loss_gan': epoch_stats['loss_gan'],
+                # Simplified logging
                 'val/delta_iou': delta_iou,
                 'val/mean_iou_before': mean_iou_before,
                 'val/mean_iou_after': mean_iou_after,
@@ -430,8 +412,7 @@ def main():
             }
             
             # Add focal loss if available
-            if 'loss_focal' in epoch_stats:
-                log_dict['train/loss_focal'] = epoch_stats['loss_focal']
+            # Simplified - no additional losses to track
             
             wandb.log(log_dict)
         

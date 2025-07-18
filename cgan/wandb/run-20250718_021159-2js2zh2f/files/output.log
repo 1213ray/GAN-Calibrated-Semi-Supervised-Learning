@@ -1,0 +1,50 @@
+W&B initialized successfully!
+Training samples: 2606, Validation samples: 289
+Generator parameters: 6,294,788
+Discriminator parameters: 2,767,808
+Starting enhanced training...
+[Epoch 1/100] G: 4.682 D: 0.812 IoU: 1.208 L1: 0.024 GAN: 0.850 Size: 0.133 Center: 0.263 Aspect: 3.225 ΔIoU: -0.0239 Before: 0.6826 After: 0.6587
+New best model saved! Delta IoU = -0.0239
+[Epoch 2/100] G: 4.612 D: 0.649 IoU: 1.124 L1: 0.025 GAN: 0.943 Size: 0.340 Center: 0.244 Aspect: 3.213 ΔIoU: -0.0223 Before: 0.6826 After: 0.6604
+New best model saved! Delta IoU = -0.0223
+[Epoch 3/100] G: 4.869 D: 0.572 IoU: 1.128 L1: 0.025 GAN: 1.155 Size: 0.252 Center: 0.243 Aspect: 3.204 ΔIoU: -0.0205 Before: 0.6826 After: 0.6622
+New best model saved! Delta IoU = -0.0205
+[Epoch 4/100] G: 5.050 D: 0.535 IoU: 1.133 L1: 0.025 GAN: 1.290 Size: 0.193 Center: 0.243 Aspect: 3.172 ΔIoU: -0.0198 Before: 0.6826 After: 0.6628
+New best model saved! Delta IoU = -0.0198
+[Epoch 5/100] G: 5.188 D: 0.523 IoU: 1.139 L1: 0.025 GAN: 1.379 Size: 0.145 Center: 0.245 Aspect: 3.216 ΔIoU: -0.0191 Before: 0.6826 After: 0.6635
+New best model saved! Delta IoU = -0.0191
+[Epoch 6/100] G: 5.282 D: 0.505 IoU: 1.142 L1: 0.024 GAN: 1.429 Size: 0.119 Center: 0.243 Aspect: 3.210 ΔIoU: -0.0183 Before: 0.6826 After: 0.6644
+New best model saved! Delta IoU = -0.0183
+[Epoch 7/100] G: 5.369 D: 0.494 IoU: 1.143 L1: 0.024 GAN: 1.482 Size: 0.097 Center: 0.244 Aspect: 3.200 ΔIoU: -0.0173 Before: 0.6826 After: 0.6654
+New best model saved! Delta IoU = -0.0173
+[Epoch 8/100] G: 5.395 D: 0.484 IoU: 1.147 L1: 0.024 GAN: 1.462 Size: 0.080 Center: 0.242 Aspect: 3.214 ΔIoU: -0.0156 Before: 0.6826 After: 0.6670
+New best model saved! Delta IoU = -0.0156
+[Epoch 9/100] G: 5.484 D: 0.480 IoU: 1.148 L1: 0.024 GAN: 1.511 Size: 0.064 Center: 0.244 Aspect: 3.274 ΔIoU: -0.0154 Before: 0.6826 After: 0.6673
+New best model saved! Delta IoU = -0.0154
+[Epoch 10/100] G: 5.568 D: 0.470 IoU: 1.146 L1: 0.024 GAN: 1.569 Size: 0.056 Center: 0.244 Aspect: 3.212 ΔIoU: -0.0139 Before: 0.6826 After: 0.6687
+New best model saved! Delta IoU = -0.0139
+[Epoch 11/100] G: 5.621 D: 0.470 IoU: 1.150 L1: 0.024 GAN: 1.578 Size: 0.043 Center: 0.243 Aspect: 3.249 ΔIoU: -0.0153 Before: 0.6826 After: 0.6673
+[Epoch 12/100] G: 5.633 D: 0.460 IoU: 1.148 L1: 0.024 GAN: 1.600 Size: 0.047 Center: 0.243 Aspect: 3.177 ΔIoU: -0.0142 Before: 0.6826 After: 0.6685
+[Epoch 13/100] G: 5.627 D: 0.454 IoU: 1.148 L1: 0.024 GAN: 1.591 Size: 0.043 Center: 0.244 Aspect: 3.202 ΔIoU: -0.0170 Before: 0.6826 After: 0.6657
+[Epoch 14/100] G: 5.653 D: 0.451 IoU: 1.142 L1: 0.024 GAN: 1.635 Size: 0.046 Center: 0.243 Aspect: 3.186 ΔIoU: -0.0148 Before: 0.6826 After: 0.6679
+[Epoch 15/100] G: 5.630 D: 0.453 IoU: 1.145 L1: 0.024 GAN: 1.614 Size: 0.039 Center: 0.244 Aspect: 3.141 ΔIoU: -0.0161 Before: 0.6826 After: 0.6665
+[Epoch 16/100] G: 5.647 D: 0.443 IoU: 1.143 L1: 0.024 GAN: 1.633 Size: 0.042 Center: 0.244 Aspect: 3.161 ΔIoU: -0.0157 Before: 0.6826 After: 0.6669
+[Epoch 17/100] G: 5.648 D: 0.431 IoU: 1.140 L1: 0.024 GAN: 1.642 Size: 0.038 Center: 0.243 Aspect: 3.192 ΔIoU: -0.0155 Before: 0.6826 After: 0.6672
+[Epoch 18/100] G: 5.638 D: 0.430 IoU: 1.138 L1: 0.024 GAN: 1.650 Size: 0.035 Center: 0.241 Aspect: 3.128 ΔIoU: -0.0160 Before: 0.6826 After: 0.6667
+[Epoch 19/100] G: 5.641 D: 0.425 IoU: 1.136 L1: 0.024 GAN: 1.659 Size: 0.033 Center: 0.240 Aspect: 3.146 ΔIoU: -0.0162 Before: 0.6826 After: 0.6665
+[Epoch 20/100] G: 5.639 D: 0.426 IoU: 1.135 L1: 0.024 GAN: 1.660 Size: 0.034 Center: 0.240 Aspect: 3.122 ΔIoU: -0.0169 Before: 0.6826 After: 0.6657
+[Epoch 21/100] G: 5.672 D: 0.422 IoU: 1.135 L1: 0.024 GAN: 1.690 Size: 0.035 Center: 0.241 Aspect: 3.161 ΔIoU: -0.0171 Before: 0.6826 After: 0.6655
+[Epoch 22/100] G: 5.631 D: 0.424 IoU: 1.132 L1: 0.024 GAN: 1.655 Size: 0.032 Center: 0.238 Aspect: 3.199 ΔIoU: -0.0178 Before: 0.6826 After: 0.6649
+[Epoch 23/100] G: 5.656 D: 0.415 IoU: 1.131 L1: 0.024 GAN: 1.688 Size: 0.032 Center: 0.236 Aspect: 3.185 ΔIoU: -0.0176 Before: 0.6826 After: 0.6650
+[Epoch 24/100] G: 5.654 D: 0.412 IoU: 1.127 L1: 0.024 GAN: 1.693 Size: 0.031 Center: 0.235 Aspect: 3.222 ΔIoU: -0.0174 Before: 0.6826 After: 0.6653
+[Epoch 25/100] G: 5.645 D: 0.414 IoU: 1.126 L1: 0.024 GAN: 1.695 Size: 0.031 Center: 0.233 Aspect: 3.171 ΔIoU: -0.0170 Before: 0.6826 After: 0.6656
+[Epoch 26/100] G: 5.654 D: 0.412 IoU: 1.126 L1: 0.025 GAN: 1.705 Size: 0.027 Center: 0.234 Aspect: 3.187 ΔIoU: -0.0173 Before: 0.6826 After: 0.6654
+[Epoch 27/100] G: 5.655 D: 0.411 IoU: 1.123 L1: 0.024 GAN: 1.712 Size: 0.031 Center: 0.233 Aspect: 3.190 ΔIoU: -0.0172 Before: 0.6826 After: 0.6655
+[Epoch 28/100] G: 5.637 D: 0.411 IoU: 1.120 L1: 0.024 GAN: 1.706 Size: 0.030 Center: 0.233 Aspect: 3.155 ΔIoU: -0.0178 Before: 0.6826 After: 0.6649
+[Epoch 29/100] G: 5.621 D: 0.408 IoU: 1.118 L1: 0.024 GAN: 1.705 Size: 0.029 Center: 0.229 Aspect: 3.114 ΔIoU: -0.0176 Before: 0.6826 After: 0.6651
+[Epoch 30/100] G: 5.608 D: 0.407 IoU: 1.114 L1: 0.024 GAN: 1.703 Size: 0.029 Center: 0.228 Aspect: 3.117 ΔIoU: -0.0178 Before: 0.6826 After: 0.6648
+Early stopping triggered.
+Training complete. Best Delta IoU = -0.0139
+Model saved to: runs\exp\G_best.pth
+[34m[1mwandb[0m: Adding directory to artifact (.\runs\exp\samples)... Done. 0.0s
+W&B artifacts saved successfully!

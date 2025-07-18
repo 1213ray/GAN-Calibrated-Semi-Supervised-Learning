@@ -1,0 +1,114 @@
+_wandb:
+    value:
+        cli_version: 0.21.0
+        e:
+            23jm2djuw5aa428uk8dcng1xvukfrd7a:
+                codePath: cgan\cgan_train_wandb.py
+                codePathLocal: cgan_train_wandb.py
+                cpu_count: 6
+                cpu_count_logical: 12
+                cudaVersion: "12.9"
+                disk:
+                    /:
+                        total: "999554600960"
+                        used: "206079746048"
+                email: 20031213ray@gmail.com
+                executable: C:\Users\alian\PycharmProjects\yolov8\.venv\Scripts\python.exe
+                git:
+                    commit: 5c6dc04d5b2b99060b139eaef49800fa4246ca0a
+                    remote: https://github.com/1213ray/pix2pix_CGAN.git
+                gpu: NVIDIA GeForce RTX 2070
+                gpu_count: 1
+                gpu_nvidia:
+                    - architecture: Turing
+                      cudaCores: 2304
+                      memoryTotal: "8589934592"
+                      name: NVIDIA GeForce RTX 2070
+                      uuid: GPU-58a9a48c-b155-5b7f-9364-6c87ceeb3c6a
+                host: DESKTOP-9HN4S50
+                memory:
+                    total: "34266636288"
+                os: Windows-10-10.0.19045-SP0
+                program: C:\Users\alian\PycharmProjects\yolov8\cgan\cgan_train_wandb.py
+                python: CPython 3.13.5
+                root: C:\Users\alian\PycharmProjects\yolov8\cgan
+                startedAt: "2025-07-17T17:04:48.576379Z"
+                writerId: 23jm2djuw5aa428uk8dcng1xvukfrd7a
+        m: []
+        python_version: 3.13.5
+        t:
+            "1":
+                - 1
+                - 41
+            "2":
+                - 1
+                - 41
+            "3":
+                - 16
+            "4": 3.13.5
+            "5": 0.21.0
+            "8":
+                - 3
+            "12": 0.21.0
+            "13": windows-amd64
+amp:
+    value: true
+batch_size:
+    value: 50
+beta1:
+    value: 0.5
+beta2:
+    value: 0.999
+d_train_ratio:
+    value: 1
+data_dir:
+    value: ../datasets/500_100_100/cgan
+delta_scale:
+    value: 0.3
+early_stop:
+    value:
+        min_delta: 5e-05
+        patience: 15
+generator_type:
+    value: UnetGenerator
+img_size:
+    value: 128
+iou_threshold:
+    value: 0.3
+lambda_iou:
+    value: 2
+lambda_l1:
+    value: 0.05
+lr:
+    value: 0.0002
+model_type:
+    value: vit
+n_epochs:
+    value: 100
+save_dir:
+    value: runs/exp
+seed:
+    value: 42
+spectral_norm:
+    value: true
+train_split:
+    value: 0.9
+use_giou:
+    value: true
+use_hybrid_loss:
+    value: true
+val_split:
+    value: 0.1
+vit:
+    value:
+        d_depth: 7
+        d_embed_dim: 256
+        g_depth: 6
+        g_embed_dim: 256
+        patch_size: 16
+wandb:
+    value:
+        enabled: true
+        entity: null
+        name: null
+        project: cgan

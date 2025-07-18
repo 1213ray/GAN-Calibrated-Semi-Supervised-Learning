@@ -67,16 +67,18 @@ def crop_patch(img: Image.Image, bbox: List[float]) -> Image.Image:
     return img.crop((x1, y1, x2, y2))
 
 def apply_delta_to_bbox_inference(bbox: List[float], delta: torch.Tensor) -> List[float]:
-    """將預測的 delta 應用於原始 bbox。"""
+    """將預測的 delta 應用於原始 bbox，與訓練時一致。"""
     cx, cy, w, h = bbox[:4]
     delta_np = delta.numpy()
     
-    # 使用正確的歸一化方法（與dataset.py中一致）
-    norm_factor = max(w, h, 0.1)
-    cx_new = cx + delta_np[0] * norm_factor
-    cy_new = cy + delta_np[1] * norm_factor
-    w_new  = w * math.exp(delta_np[2])
-    h_new  = h * math.exp(delta_np[3])
+    # 使用與訓練時一致的方法（與losses.py中的apply_delta_to_bbox一致）
+    # 限制delta範圍
+    delta_clamped = [max(-2, min(2, d)) for d in delta_np]
+    
+    cx_new = cx + delta_clamped[0] * w
+    cy_new = cy + delta_clamped[1] * h
+    w_new = w * math.exp(delta_clamped[2])
+    h_new = h * math.exp(delta_clamped[3])
     
     # 限制結果在合理範圍內
     cx_new = max(0.05, min(0.95, cx_new))

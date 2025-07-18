@@ -1,0 +1,18 @@
+W&B initialized successfully!
+Training samples: 2574, Validation samples: 286
+Generator parameters: 6,294,788
+Discriminator parameters: 2,767,808
+Using Pure EIoU Loss (lambda_iou=1.0)
+Starting enhanced training...
+Traceback (most recent call last):
+  File "C:\Users\alian\PycharmProjects\yolov8\cgan\cgan_train_enhanced.py", line 521, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\alian\PycharmProjects\yolov8\cgan\cgan_train_enhanced.py", line 251, in main
+    criterion_hybrid.set_epoch(epoch - 1)  # 0-indexed
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\alian\PycharmProjects\yolov8\.venv\Lib\site-packages\torch\nn\modules\module.py", line 1940, in __getattr__
+    raise AttributeError(
+        f"'{type(self).__name__}' object has no attribute '{name}'"
+    )
+AttributeError: 'HybridLoss' object has no attribute 'set_epoch'

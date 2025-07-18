@@ -1,0 +1,17 @@
+Weights & Biases integration enabled.
+Using device: cuda
+Generator type: UnetGenerator
+Using hybrid loss: True
+Using GIoU: True
+Training samples: 2533, Validation samples: 281
+Using Vision Transformer (ViT) models.
+Generator parameters: 4,985,732
+Discriminator parameters: 5,939,457
+Traceback (most recent call last):
+  File "C:\Users\alian\PycharmProjects\yolov8\cgan\cgan_train_wandb.py", line 402, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\alian\PycharmProjects\yolov8\cgan\cgan_train_wandb.py", line 198, in main
+    lambda_focal=args.lambda_focal,
+                 ^^^^^^^^^^^^^^^^^
+AttributeError: 'Namespace' object has no attribute 'lambda_focal'. Did you mean: 'lambda_iou'?

@@ -1,0 +1,12 @@
+W&B initialized successfully!
+Training samples: 2574, Validation samples: 286
+Generator parameters: 6,294,788
+Discriminator parameters: 2,767,808
+Using Pure EIoU Loss (lambda_iou=1.0)
+Starting enhanced training...
+[Epoch 1/1] G: 3.204 D: 0.550 EIoU: 1.759 GAN: 1.445 ΔIoU: 0.0046 Before: 0.6784 After: 0.6829
+New best model saved! Delta IoU = 0.0046
+Training complete. Best Delta IoU = 0.0046
+Model saved to: runs\exp\G_best.pth
+wandb: Adding directory to artifact (.\runs\exp\samples)... Done. 0.0s
+W&B artifacts saved successfully!

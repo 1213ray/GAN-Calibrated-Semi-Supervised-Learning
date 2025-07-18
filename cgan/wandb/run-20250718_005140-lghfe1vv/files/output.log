@@ -1,0 +1,18 @@
+Weights & Biases integration enabled.
+Using device: cuda
+Generator type: UnetGenerator
+Using hybrid loss: True
+Using GIoU: True
+Traceback (most recent call last):
+  File "C:\Users\alian\PycharmProjects\yolov8\cgan\cgan_train_wandb.py", line 399, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\alian\PycharmProjects\yolov8\cgan\cgan_train_wandb.py", line 156, in main
+    train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=2, pin_memory=True)
+  File "C:\Users\alian\PycharmProjects\yolov8\.venv\Lib\site-packages\torch\utils\data\dataloader.py", line 385, in __init__
+    sampler = RandomSampler(dataset, generator=generator)  # type: ignore[arg-type]
+  File "C:\Users\alian\PycharmProjects\yolov8\.venv\Lib\site-packages\torch\utils\data\sampler.py", line 156, in __init__
+    raise ValueError(
+        f"num_samples should be a positive integer value, but got num_samples={self.num_samples}"
+    )
+ValueError: num_samples should be a positive integer value, but got num_samples=0

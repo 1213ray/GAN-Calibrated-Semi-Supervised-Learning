@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-Enhanced Loss Functions for CGAN Calibration
-包含IoU, GIoU, 和混合損失函數
+Pure EIoU Loss Functions for CGAN Calibration
+只包含EIoU相關的損失函數和工具函數
 """
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
-class IoULoss(nn.Module):
+class EIoULoss(nn.Module):
     """
-    IoU Loss for bounding box regression
+    Efficient IoU Loss for bounding box regression
+    EIoU = IoU - ρ²(b,b^gt)/c² - ρ²(w,w^gt)/c_w² - ρ²(h,h^gt)/c_h²
     """
     def __init__(self, eps=1e-6):
         super().__init__()
@@ -22,7 +22,7 @@ class IoULoss(nn.Module):
             pred_boxes: (N, 4) [cx, cy, w, h] normalized
             target_boxes: (N, 4) [cx, cy, w, h] normalized
         """
-        # Convert to corners
+        # Convert to corners for IoU calculation
         pred_x1 = pred_boxes[:, 0] - pred_boxes[:, 2] / 2
         pred_y1 = pred_boxes[:, 1] - pred_boxes[:, 3] / 2
         pred_x2 = pred_boxes[:, 0] + pred_boxes[:, 2] / 2
@@ -49,125 +49,52 @@ class IoULoss(nn.Module):
         # Calculate IoU
         iou = inter_area / (union_area + self.eps)
         
-        # Return 1 - IoU as loss (lower is better)
-        return 1 - iou.mean()
-
-class GIoULoss(nn.Module):
-    """
-    Generalized IoU Loss for bounding box regression
-    """
-    def __init__(self, eps=1e-6):
-        super().__init__()
-        self.eps = eps
-    
-    def forward(self, pred_boxes, target_boxes):
-        """
-        Args:
-            pred_boxes: (N, 4) [cx, cy, w, h] normalized
-            target_boxes: (N, 4) [cx, cy, w, h] normalized
-        """
-        # Convert to corners
-        pred_x1 = pred_boxes[:, 0] - pred_boxes[:, 2] / 2
-        pred_y1 = pred_boxes[:, 1] - pred_boxes[:, 3] / 2
-        pred_x2 = pred_boxes[:, 0] + pred_boxes[:, 2] / 2
-        pred_y2 = pred_boxes[:, 1] + pred_boxes[:, 3] / 2
-        
-        target_x1 = target_boxes[:, 0] - target_boxes[:, 2] / 2
-        target_y1 = target_boxes[:, 1] - target_boxes[:, 3] / 2
-        target_x2 = target_boxes[:, 0] + target_boxes[:, 2] / 2
-        target_y2 = target_boxes[:, 1] + target_boxes[:, 3] / 2
-        
-        # Calculate intersection
-        inter_x1 = torch.max(pred_x1, target_x1)
-        inter_y1 = torch.max(pred_y1, target_y1)
-        inter_x2 = torch.min(pred_x2, target_x2)
-        inter_y2 = torch.min(pred_y2, target_y2)
-        
-        inter_area = torch.clamp(inter_x2 - inter_x1, min=0) * torch.clamp(inter_y2 - inter_y1, min=0)
-        
-        # Calculate union
-        pred_area = (pred_x2 - pred_x1) * (pred_y2 - pred_y1)
-        target_area = (target_x2 - target_x1) * (target_y2 - target_y1)
-        union_area = pred_area + target_area - inter_area
-        
-        # Calculate IoU
-        iou = inter_area / (union_area + self.eps)
-        
-        # Calculate enclosing box
+        # Calculate enclosing box for EIoU
         enclose_x1 = torch.min(pred_x1, target_x1)
         enclose_y1 = torch.min(pred_y1, target_y1)
         enclose_x2 = torch.max(pred_x2, target_x2)
         enclose_y2 = torch.max(pred_y2, target_y2)
         
-        enclose_area = (enclose_x2 - enclose_x1) * (enclose_y2 - enclose_y1)
+        enclose_w = enclose_x2 - enclose_x1
+        enclose_h = enclose_y2 - enclose_y1
+        enclose_c = enclose_w ** 2 + enclose_h ** 2  # diagonal²
         
-        # Calculate GIoU
-        giou = iou - (enclose_area - union_area) / (enclose_area + self.eps)
+        # Center point distance
+        center_distance = (pred_boxes[:, 0] - target_boxes[:, 0]) ** 2 + (pred_boxes[:, 1] - target_boxes[:, 1]) ** 2
         
-        # Return 1 - GIoU as loss (lower is better)
-        return 1 - giou.mean()
-
-class FocalLoss(nn.Module):
-    """Focal Loss for hard examples"""
-    def __init__(self, alpha=1.0, gamma=2.0):
-        super().__init__()
-        self.alpha = alpha
-        self.gamma = gamma
+        # Width and height differences
+        w_distance = (pred_boxes[:, 2] - target_boxes[:, 2]) ** 2
+        h_distance = (pred_boxes[:, 3] - target_boxes[:, 3]) ** 2
         
-    def forward(self, pred, target):
-        ce_loss = F.binary_cross_entropy_with_logits(pred, target, reduction='none')
-        pt = torch.exp(-ce_loss)
-        focal_loss = self.alpha * (1 - pt) ** self.gamma * ce_loss
-        return focal_loss.mean()
+        # EIoU calculation
+        eiou = iou - center_distance / (enclose_c + self.eps) - w_distance / (enclose_w ** 2 + self.eps) - h_distance / (enclose_h ** 2 + self.eps)
+        
+        # Return 1 - EIoU as loss (lower is better)
+        return 1 - eiou.mean()
 
 class HybridLoss(nn.Module):
     """
-    Enhanced hybrid loss with focal loss for hard examples
+    Pure EIoU Loss for CGAN training
     """
-    def __init__(self, 
-                 lambda_iou=2.0, 
-                 lambda_l1=0.05, 
-                 lambda_focal=0.5,
-                 use_giou=True, 
-                 eps=1e-6):
+    def __init__(self, lambda_iou=1.0, **kwargs):
         super().__init__()
         self.lambda_iou = lambda_iou
-        self.lambda_l1 = lambda_l1
-        self.lambda_focal = lambda_focal
-        self.use_giou = use_giou
-        
-        if use_giou:
-            self.iou_loss = GIoULoss(eps=eps)
-        else:
-            self.iou_loss = IoULoss(eps=eps)
-        
-        self.l1_loss = nn.SmoothL1Loss()
-        self.focal_loss = FocalLoss()
+        self.iou_loss = EIoULoss()
+        print(f"Using Pure EIoU Loss (lambda_iou={lambda_iou})")
     
     def forward(self, pred_deltas, target_deltas, pred_boxes, target_boxes):
         """
         Args:
-            pred_deltas: (N, 4) predicted delta values
-            target_deltas: (N, 4) target delta values
+            pred_deltas: (N, 4) predicted delta values (unused)
+            target_deltas: (N, 4) target delta values (unused)
             pred_boxes: (N, 4) predicted boxes after applying deltas
             target_boxes: (N, 4) target boxes
         """
-        # IoU/GIoU loss on boxes
+        # Pure EIoU loss - only geometric constraints
         iou_loss = self.iou_loss(pred_boxes, target_boxes)
+        total_loss = self.lambda_iou * iou_loss
         
-        # L1 loss on deltas
-        l1_loss = self.l1_loss(pred_deltas, target_deltas)
-        
-        # Focal loss for hard examples
-        delta_diff = torch.abs(pred_deltas - target_deltas)
-        focal_loss = self.focal_loss(delta_diff, torch.zeros_like(delta_diff))
-        
-        # Combine losses
-        total_loss = (self.lambda_iou * iou_loss + 
-                     self.lambda_l1 * l1_loss + 
-                     self.lambda_focal * focal_loss)
-        
-        return total_loss, iou_loss, l1_loss, focal_loss
+        return total_loss, iou_loss
 
 def smooth_clamp(x, min_val, max_val, temperature=0.1):
     """Smooth clamp function that maintains gradients"""
@@ -209,16 +136,6 @@ def apply_delta_to_bbox(bbox, delta, training=True):
         h = torch.clamp(h, 0.01, 0.9)
     
     return torch.stack([cx, cy, w, h], dim=-1)
-
-def apply_delta_to_bbox_eval(bbox, delta):
-    """
-    Apply deltas for evaluation with hard clamp for safety
-    Deprecated: Use apply_delta_to_bbox(bbox, delta, training=False) instead
-    """
-    import warnings
-    warnings.warn("apply_delta_to_bbox_eval is deprecated. Use apply_delta_to_bbox(bbox, delta, training=False) instead.", 
-                  DeprecationWarning, stacklevel=2)
-    return apply_delta_to_bbox(bbox, delta, training=False)
 
 def iou_metric(pred_boxes, target_boxes, eps=1e-6):
     """

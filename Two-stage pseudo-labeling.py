@@ -1,8 +1,8 @@
 
 # ─────────────────── 參數區 ───────────────────
-WEIGHTS_PATH = r"C:\Users\20039\PycharmProjects\yoloV8\pythonProject\models\person_two_pass_v2.pt"        # models
-SOURCE_DIR   = r"C:\Users\20039\PycharmProjects\yoloV8\pythonProject\datasets\pseudo_dataset_person_two_pass\v2\stage1\low\images"     # 原始影像資料夾
-DEST_DIR     = r"C:\Users\20039\PycharmProjects\yoloV8\pythonProject\datasets\pseudo_dataset_person_two_pass\v3"     # 輸出根目錄
+WEIGHTS_PATH = r"C:\Users\alian\PycharmProjects\yolov8\models\person_v1.pt"        # models
+SOURCE_DIR   = r"C:\Users\alian\PycharmProjects\yolov8\datasets\500_100_100\unlabels\images"     # 原始影像資料夾
+DEST_DIR     = r"C:\Users\alian\PycharmProjects\yolov8\datasets\500_100_100\two_stage"     # 輸出根目錄
 
 CONF_HIGH    = 0.85      # 高置信度門檻
 CONF_LOW     = 0.40      # 低置信度門檻

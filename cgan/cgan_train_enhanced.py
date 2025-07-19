@@ -30,47 +30,70 @@ def get_generator(generator_type, delta_scale):
     else:
         return GeneratorUNet(delta_scale=delta_scale)
 
+# 全域圖像緩存
+_IMAGE_CACHE = {}
+_CACHE_MAX_SIZE = 100  # 最多緩存100張圖像
+
 def get_refined_patch_batch(original_image_paths, pred_bboxes, deltas_pred, img_size, device, fallback_patches=None):
-    """Generate refined patches using predicted deltas with proper fallback"""
-    refined_patches = []
+    """
+    Generate refined patches using predicted deltas with image caching for better performance
+    添加了圖像緩存機制和性能優化
+    """
     from torchvision import transforms
     from PIL import Image, ImageOps
     
+    # 預定義變換，避免重複創建
     transform_to_tensor = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
     ])
 
+    refined_patches = []
     fallback_count = 0
     
+    # 批量處理 delta 應用，提高效率
+    pred_bboxes_cpu = pred_bboxes.cpu()
+    deltas_pred_cpu = deltas_pred.cpu()
+    refined_boxes = apply_delta_to_bbox(pred_bboxes_cpu, deltas_pred_cpu, training=False)
+    
     for i in range(len(original_image_paths)):
-        img_path = original_image_paths[i]
-        pred_box = pred_bboxes[i]
-        delta = deltas_pred[i]
+        img_path = str(original_image_paths[i])
+        pred_box = pred_bboxes_cpu[i]
+        refined_box = refined_boxes[i]
         
-        # 限制delta範圍防止數值爆炸 (使用推論模式以確保穩定性)
-        refined_box = apply_delta_to_bbox(pred_box.unsqueeze(0).cpu(), delta.unsqueeze(0).cpu(), training=False).squeeze(0)
-
         try:
-            img = Image.open(img_path).convert("RGB")
+            # 使用緩存機制加載圖像
+            if img_path in _IMAGE_CACHE:
+                img = _IMAGE_CACHE[img_path]
+            else:
+                img = Image.open(img_path).convert("RGB")
+                # 簡單的LRU緩存實現
+                if len(_IMAGE_CACHE) >= _CACHE_MAX_SIZE:
+                    # 移除最舊的條目
+                    oldest_key = next(iter(_IMAGE_CACHE))
+                    del _IMAGE_CACHE[oldest_key]
+                _IMAGE_CACHE[img_path] = img
+            
             W, H = img.size
             cx, cy, w, h = refined_box
             
-            # 確保邊界框在合理範圍內
-            cx = max(0.1, min(0.9, float(cx)))
-            cy = max(0.1, min(0.9, float(cy)))
-            w = max(0.05, min(0.8, float(w)))
-            h = max(0.05, min(0.8, float(h)))
+            # 邊界檢查和修正
+            cx = float(torch.clamp(cx, 0.1, 0.9))
+            cy = float(torch.clamp(cy, 0.1, 0.9))
+            w = float(torch.clamp(w, 0.05, 0.8))
+            h = float(torch.clamp(h, 0.05, 0.8))
             
+            # 計算像素座標
             px, py, pw, ph = cx * W, cy * H, w * W, h * H
             x1, y1 = max(0, px - pw / 2), max(0, py - ph / 2)
             x2, y2 = min(W, px + pw / 2), min(H, py + ph / 2)
             
-            # 檢查邊界框是否有效
+            # 檢查邊界框有效性
             if x2 <= x1 or y2 <= y1 or (x2 - x1) < 10 or (y2 - y1) < 10:
-                # 使用原始pred_box作為fallback
-                orig_cx, orig_cy, orig_w, orig_h = pred_box.cpu()
-                orig_px, orig_py, orig_pw, orig_ph = float(orig_cx) * W, float(orig_cy) * H, float(orig_w) * W, float(orig_h) * H
+                # 使用原始 pred_box 作為 fallback
+                orig_cx, orig_cy, orig_w, orig_h = pred_box
+                orig_px, orig_py = float(orig_cx) * W, float(orig_cy) * H
+                orig_pw, orig_ph = float(orig_w) * W, float(orig_h) * H
                 orig_x1, orig_y1 = max(0, orig_px - orig_pw / 2), max(0, orig_py - orig_ph / 2)
                 orig_x2, orig_y2 = min(W, orig_px + orig_pw / 2), min(H, orig_py + orig_ph / 2)
                 crop = img.crop((int(orig_x1), int(orig_y1), int(orig_x2), int(orig_y2)))
@@ -78,29 +101,40 @@ def get_refined_patch_batch(original_image_paths, pred_bboxes, deltas_pred, img_
             else:
                 crop = img.crop((int(x1), int(y1), int(x2), int(y2)))
 
-            # 標準化patch處理
-            pad_w = max(crop.height - crop.width, 0)
-            pad_h = max(crop.width - crop.height, 0)
-            padding = (pad_w // 2, pad_h // 2, pad_w - pad_w // 2, pad_h - pad_h // 2)
-            crop_square = ImageOps.expand(crop, padding, fill=(128, 128, 128))
-            crop_resized = crop_square.resize((img_size, img_size), Image.BICUBIC)
+            # 優化的patch處理：使用更快的方法
+            if crop.width != crop.height:
+                # 只在需要時進行padding
+                pad_w = max(crop.height - crop.width, 0)
+                pad_h = max(crop.width - crop.height, 0)
+                padding = (pad_w // 2, pad_h // 2, pad_w - pad_w // 2, pad_h - pad_h // 2)
+                crop = ImageOps.expand(crop, padding, fill=(128, 128, 128))
             
-            refined_patches.append(transform_to_tensor(crop_resized))
+            # 調整大小
+            if crop.size != (img_size, img_size):
+                crop = crop.resize((img_size, img_size), Image.BICUBIC)
+            
+            refined_patches.append(transform_to_tensor(crop))
             
         except Exception as e:
-            # 使用原始patch作為fallback而不是零張量
+            # 錯誤處理：使用fallback
             if fallback_patches is not None:
-                refined_patches.append(fallback_patches[i])
+                refined_patches.append(fallback_patches[i].cpu())
             else:
-                # 創建一個中性的patch
-                neutral_patch = torch.ones(3, img_size, img_size) * 0.5
+                # 創建中性patch
+                neutral_patch = torch.zeros(3, img_size, img_size)
                 refined_patches.append(neutral_patch)
             fallback_count += 1
+    
+    # 批量移動到設備，減少GPU傳輸次數
+    if refined_patches:
+        result = torch.stack(refined_patches).to(device, non_blocking=True)
+    else:
+        result = torch.zeros(len(original_image_paths), 3, img_size, img_size, device=device)
     
     if fallback_count > 0:
         print(f"Warning: {fallback_count}/{len(original_image_paths)} patches used fallback")
 
-    return torch.stack(refined_patches).to(device)
+    return result
 
 def main():
     # 載入配置檔案
@@ -129,7 +163,6 @@ def main():
     parser.add_argument("--val_split", type=float, default=config['val_split'])
     parser.add_argument("--save_dir", type=str, default=config['save_dir'])
     parser.add_argument("--seed", type=int, default=config['seed'])
-    parser.add_argument("--d_train_ratio", type=int, default=config['d_train_ratio'])
     parser.add_argument("--lambda_gp", type=float, default=config.get('lambda_gp', 10.0))
     parser.add_argument("--n_critic", type=int, default=config.get('n_critic', 5))
     args = parser.parse_args()
@@ -172,7 +205,6 @@ def main():
                 'train_split': args.train_split,
                 'val_split': args.val_split,
                 'seed': args.seed,
-                'd_train_ratio': args.d_train_ratio,
                 'lambda_gp': args.lambda_gp,
                 'n_critic': args.n_critic,
                 'data_dir': args.data_dir,
@@ -262,21 +294,28 @@ def main():
 
             batch_size = pred_patch.size(0)
 
-            # Train Discriminator (Critic) - WGAN-GP 每個批次都要訓練判別器
-            for _ in range(args.n_critic):
+            # ===== WGAN-GP 訓練循環：先訓練判別器 n_critic 次，再訓練生成器一次 =====
+            
+            # 1. 訓練判別器 (Critic) n_critic 次
+            d_loss_epoch = 0.0
+            gp_loss_epoch = 0.0
+            wd_epoch = 0.0
+            
+            for critic_step in range(args.n_critic):
                 optimizer_D.zero_grad()
 
-                # Real samples
+                # 真實樣本 (pred_patch + gt_patch)
                 real_validity = netD(pred_patch, gt_patch)
                 
-                # Fake samples
-                delta_pred_detached = netG(pred_patch).detach()
-                refined_patch = get_refined_patch_batch(
-                    img_path, pred_box, delta_pred_detached, args.img_size, device, fallback_patches=pred_patch
-                )
+                # 生成假樣本 (pred_patch + refined_patch)
+                with torch.no_grad():  # 生成器參數不參與判別器訓練
+                    delta_pred_detached = netG(pred_patch)
+                    refined_patch = get_refined_patch_batch(
+                        img_path, pred_box, delta_pred_detached, args.img_size, device, fallback_patches=pred_patch
+                    )
                 fake_validity = netD(pred_patch, refined_patch)
                 
-                # Gradient penalty
+                # 計算梯度懲罰
                 gradient_penalty = compute_gradient_penalty(
                     netD, 
                     (pred_patch, gt_patch), 
@@ -284,50 +323,54 @@ def main():
                     device
                 )
                 
-                # Wasserstein loss with gradient penalty
-                d_loss = torch.mean(fake_validity) - torch.mean(real_validity) + args.lambda_gp * gradient_penalty
-                d_loss.backward()
+                # WGAN-GP 損失：W_distance + λ * GP
+                wasserstein_distance = torch.mean(real_validity) - torch.mean(fake_validity)
+                d_loss = -wasserstein_distance + args.lambda_gp * gradient_penalty
                 
-                # Gradient clipping
+                d_loss.backward()
                 torch.nn.utils.clip_grad_norm_(netD.parameters(), max_norm=1.0)
                 optimizer_D.step()
                 
-                # Record losses (只記錄最後一次的損失值)
-                if _ == args.n_critic - 1:
-                    epoch_stats['loss_D'] += d_loss.item()
-                    epoch_stats['loss_gp'] += gradient_penalty.item()
-                    epoch_stats['wasserstein_distance'] += (torch.mean(real_validity) - torch.mean(fake_validity)).item()
+                # 累積損失用於記錄
+                d_loss_epoch += d_loss.item()
+                gp_loss_epoch += gradient_penalty.item()
+                wd_epoch += wasserstein_distance.item()
+            
+            # 記錄平均判別器損失
+            epoch_stats['loss_D'] += d_loss_epoch / args.n_critic
+            epoch_stats['loss_gp'] += gp_loss_epoch / args.n_critic
+            epoch_stats['wasserstein_distance'] += wd_epoch / args.n_critic
 
-            # Train Generator
+            # 2. 訓練生成器一次
             optimizer_G.zero_grad()
             
+            # 重新前向傳播生成器（現在需要梯度）
             delta_pred = netG(pred_patch)
             
-            # Calculate calibrated boxes (使用訓練模式)
+            # 計算 EIoU 回歸損失
             calibrated_boxes = apply_delta_to_bbox(pred_box, delta_pred, training=True)
             gt_boxes = apply_delta_to_bbox(pred_box, delta_true, training=True)
-            
-            # Use Pure EIoU loss
             loss_G_reg, loss_iou = criterion_hybrid(
                 delta_pred, delta_true, calibrated_boxes, gt_boxes
             )
-            epoch_stats['loss_iou'] += loss_iou.item()
-
-            # WGAN-GP 對抗損失 - 生成器要最大化判別器的輸出
+            
+            # 計算對抗損失：生成器希望判別器給假樣本高分
             refined_patch_for_G = get_refined_patch_batch(
                 img_path, pred_box, delta_pred, args.img_size, device, fallback_patches=pred_patch
             )
             fake_validity_for_G = netD(pred_patch, refined_patch_for_G)
-            loss_WGAN_G = -torch.mean(fake_validity_for_G)  # 負號：最大化判別器輸出
+            loss_WGAN_G = -torch.mean(fake_validity_for_G)  # 生成器希望最大化判別器輸出
 
+            # 總生成器損失
             loss_G = loss_G_reg + loss_WGAN_G
             loss_G.backward()
             
-            # Gradient clipping
             torch.nn.utils.clip_grad_norm_(netG.parameters(), max_norm=1.0)
             optimizer_G.step()
 
+            # 記錄生成器損失
             epoch_stats['loss_G'] += loss_G.item()
+            epoch_stats['loss_iou'] += loss_iou.item()
             epoch_stats['loss_wgan'] += loss_WGAN_G.item()
 
             # Save sample images occasionally

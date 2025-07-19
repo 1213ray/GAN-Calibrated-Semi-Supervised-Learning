@@ -1,0 +1,61 @@
+W&B initialized successfully!
+Training samples: 14819, Validation samples: 3704
+Generator parameters: 6,294,788
+Discriminator parameters: 2,767,808
+Using Pure EIoU Loss (lambda_iou=1.0)
+Starting enhanced training...
+[Epoch 1/500] G: 1.699 D: -0.073 EIoU: 1.845 WGAN: -0.147 GP: 0.023 WD: 0.307 ΔIoU: -0.0230 Before: 0.6172 After: 0.5943
+New best model saved! Delta IoU = -0.0230
+[Epoch 2/500] G: 2.020 D: -0.470 EIoU: 1.821 WGAN: 0.199 GP: 0.012 WD: 0.593 ΔIoU: -0.0078 Before: 0.6172 After: 0.6094
+New best model saved! Delta IoU = -0.0078
+[Epoch 3/500] G: 2.209 D: -0.597 EIoU: 1.811 WGAN: 0.398 GP: 0.008 WD: 0.676 ΔIoU: -0.0061 Before: 0.6172 After: 0.6112
+New best model saved! Delta IoU = -0.0061
+[Epoch 4/500] G: 2.326 D: -0.646 EIoU: 1.803 WGAN: 0.523 GP: 0.008 WD: 0.722 ΔIoU: -0.0031 Before: 0.6172 After: 0.6141
+New best model saved! Delta IoU = -0.0031
+[Epoch 5/500] G: 2.288 D: -0.678 EIoU: 1.799 WGAN: 0.489 GP: 0.007 WD: 0.748 ΔIoU: -0.0030 Before: 0.6172 After: 0.6142
+New best model saved! Delta IoU = -0.0030
+[Epoch 6/500] G: 2.219 D: -0.698 EIoU: 1.793 WGAN: 0.425 GP: 0.007 WD: 0.763 ΔIoU: -0.0062 Before: 0.6172 After: 0.6110
+[Epoch 7/500] G: 2.155 D: -0.711 EIoU: 1.789 WGAN: 0.366 GP: 0.006 WD: 0.776 ΔIoU: -0.0103 Before: 0.6172 After: 0.6069
+[Epoch 8/500] G: 2.096 D: -0.721 EIoU: 1.783 WGAN: 0.313 GP: 0.006 WD: 0.783 ΔIoU: -0.0085 Before: 0.6172 After: 0.6088
+[Epoch 9/500] G: 2.086 D: -0.728 EIoU: 1.779 WGAN: 0.307 GP: 0.006 WD: 0.791 ΔIoU: -0.0102 Before: 0.6172 After: 0.6070
+[Epoch 10/500] G: 2.068 D: -0.732 EIoU: 1.771 WGAN: 0.296 GP: 0.006 WD: 0.793 ΔIoU: -0.0058 Before: 0.6172 After: 0.6115
+[Epoch 11/500] G: 2.053 D: -0.738 EIoU: 1.767 WGAN: 0.286 GP: 0.006 WD: 0.795 ΔIoU: -0.0086 Before: 0.6172 After: 0.6087
+[Epoch 12/500] G: 2.065 D: -0.746 EIoU: 1.750 WGAN: 0.315 GP: 0.004 WD: 0.786 ΔIoU: -0.0084 Before: 0.6172 After: 0.6088
+[Epoch 13/500] G: 2.030 D: -0.744 EIoU: 1.744 WGAN: 0.287 GP: 0.004 WD: 0.785 ΔIoU: -0.0064 Before: 0.6172 After: 0.6108
+[Epoch 14/500] G: 2.032 D: -0.743 EIoU: 1.735 WGAN: 0.296 GP: 0.004 WD: 0.783 ΔIoU: -0.0068 Before: 0.6172 After: 0.6105
+[Epoch 15/500] G: 2.000 D: -0.737 EIoU: 1.729 WGAN: 0.271 GP: 0.004 WD: 0.781 ΔIoU: -0.0096 Before: 0.6172 After: 0.6076
+[Epoch 16/500] G: 1.966 D: -0.735 EIoU: 1.720 WGAN: 0.247 GP: 0.004 WD: 0.778 ΔIoU: -0.0051 Before: 0.6172 After: 0.6122
+[Epoch 17/500] G: 1.951 D: -0.738 EIoU: 1.710 WGAN: 0.240 GP: 0.004 WD: 0.779 ΔIoU: -0.0108 Before: 0.6172 After: 0.6065
+[Epoch 18/500] G: 1.919 D: -0.734 EIoU: 1.692 WGAN: 0.226 GP: 0.004 WD: 0.771 ΔIoU: -0.0067 Before: 0.6172 After: 0.6106
+[Epoch 19/500] G: 1.893 D: -0.731 EIoU: 1.685 WGAN: 0.208 GP: 0.004 WD: 0.767 ΔIoU: -0.0095 Before: 0.6172 After: 0.6078
+[Epoch 20/500] G: 1.886 D: -0.730 EIoU: 1.681 WGAN: 0.205 GP: 0.004 WD: 0.766 ΔIoU: -0.0089 Before: 0.6172 After: 0.6084
+[Epoch 21/500] G: 1.864 D: -0.729 EIoU: 1.675 WGAN: 0.189 GP: 0.004 WD: 0.766 ΔIoU: -0.0095 Before: 0.6172 After: 0.6077
+[Epoch 22/500] G: 1.833 D: -0.731 EIoU: 1.666 WGAN: 0.167 GP: 0.004 WD: 0.768 ΔIoU: -0.0078 Before: 0.6172 After: 0.6095
+[Epoch 23/500] G: 1.855 D: -0.730 EIoU: 1.662 WGAN: 0.193 GP: 0.004 WD: 0.766 ΔIoU: -0.0054 Before: 0.6172 After: 0.6118
+[Epoch 24/500] G: 1.878 D: -0.727 EIoU: 1.652 WGAN: 0.226 GP: 0.004 WD: 0.762 ΔIoU: -0.0052 Before: 0.6172 After: 0.6120
+[Epoch 25/500] G: 1.903 D: -0.725 EIoU: 1.649 WGAN: 0.254 GP: 0.004 WD: 0.760 ΔIoU: -0.0066 Before: 0.6172 After: 0.6107
+[Epoch 26/500] G: 1.900 D: -0.725 EIoU: 1.646 WGAN: 0.254 GP: 0.003 WD: 0.759 ΔIoU: -0.0069 Before: 0.6172 After: 0.6104
+[Epoch 27/500] G: 1.886 D: -0.725 EIoU: 1.641 WGAN: 0.245 GP: 0.003 WD: 0.760 ΔIoU: -0.0054 Before: 0.6172 After: 0.6118
+[Epoch 28/500] G: 1.902 D: -0.724 EIoU: 1.638 WGAN: 0.263 GP: 0.003 WD: 0.758 ΔIoU: -0.0060 Before: 0.6172 After: 0.6113
+[Epoch 29/500] G: 1.893 D: -0.720 EIoU: 1.636 WGAN: 0.256 GP: 0.003 WD: 0.754 ΔIoU: -0.0066 Before: 0.6172 After: 0.6106
+[Epoch 30/500] G: 1.902 D: -0.716 EIoU: 1.631 WGAN: 0.270 GP: 0.004 WD: 0.751 ΔIoU: -0.0066 Before: 0.6172 After: 0.6107
+[Epoch 31/500] G: 1.895 D: -0.717 EIoU: 1.627 WGAN: 0.268 GP: 0.003 WD: 0.752 ΔIoU: -0.0065 Before: 0.6172 After: 0.6108
+[Epoch 32/500] G: 1.900 D: -0.715 EIoU: 1.626 WGAN: 0.273 GP: 0.003 WD: 0.750 ΔIoU: -0.0052 Before: 0.6172 After: 0.6121
+[Epoch 33/500] G: 1.901 D: -0.715 EIoU: 1.624 WGAN: 0.277 GP: 0.003 WD: 0.749 ΔIoU: -0.0063 Before: 0.6172 After: 0.6109
+[Epoch 34/500] G: 1.917 D: -0.715 EIoU: 1.623 WGAN: 0.294 GP: 0.004 WD: 0.751 ΔIoU: -0.0060 Before: 0.6172 After: 0.6112
+[Epoch 35/500] G: 1.912 D: -0.716 EIoU: 1.621 WGAN: 0.290 GP: 0.003 WD: 0.751 ΔIoU: -0.0059 Before: 0.6172 After: 0.6113
+[Epoch 36/500] G: 1.902 D: -0.713 EIoU: 1.618 WGAN: 0.283 GP: 0.003 WD: 0.748 ΔIoU: -0.0054 Before: 0.6172 After: 0.6118
+[Epoch 37/500] G: 1.907 D: -0.714 EIoU: 1.618 WGAN: 0.289 GP: 0.003 WD: 0.749 ΔIoU: -0.0059 Before: 0.6172 After: 0.6113
+[Epoch 38/500] G: 1.912 D: -0.715 EIoU: 1.616 WGAN: 0.296 GP: 0.003 WD: 0.749 ΔIoU: -0.0055 Before: 0.6172 After: 0.6118
+[Epoch 39/500] G: 1.926 D: -0.714 EIoU: 1.616 WGAN: 0.310 GP: 0.003 WD: 0.749 ΔIoU: -0.0061 Before: 0.6172 After: 0.6111
+[Epoch 40/500] G: 1.939 D: -0.713 EIoU: 1.614 WGAN: 0.325 GP: 0.003 WD: 0.748 ΔIoU: -0.0058 Before: 0.6172 After: 0.6115
+[Epoch 41/500] G: 1.945 D: -0.713 EIoU: 1.615 WGAN: 0.330 GP: 0.003 WD: 0.747 ΔIoU: -0.0054 Before: 0.6172 After: 0.6118
+[Epoch 42/500] G: 1.919 D: -0.711 EIoU: 1.611 WGAN: 0.308 GP: 0.003 WD: 0.746 ΔIoU: -0.0056 Before: 0.6172 After: 0.6116
+[Epoch 43/500] G: 1.933 D: -0.711 EIoU: 1.611 WGAN: 0.321 GP: 0.003 WD: 0.746 ΔIoU: -0.0062 Before: 0.6172 After: 0.6110
+[Epoch 44/500] G: 1.937 D: -0.713 EIoU: 1.611 WGAN: 0.326 GP: 0.003 WD: 0.747 ΔIoU: -0.0056 Before: 0.6172 After: 0.6116
+[Epoch 45/500] G: 1.936 D: -0.712 EIoU: 1.610 WGAN: 0.325 GP: 0.004 WD: 0.747 ΔIoU: -0.0058 Before: 0.6172 After: 0.6115
+[Epoch 46/500] G: 1.947 D: -0.709 EIoU: 1.610 WGAN: 0.338 GP: 0.003 WD: 0.743 ΔIoU: -0.0060 Before: 0.6172 After: 0.6113
+[Epoch 47/500] G: 1.951 D: -0.711 EIoU: 1.611 WGAN: 0.340 GP: 0.003 WD: 0.744 ΔIoU: -0.0056 Before: 0.6172 After: 0.6116
+[Epoch 48/500] G: 1.939 D: -0.708 EIoU: 1.609 WGAN: 0.329 GP: 0.003 WD: 0.742 ΔIoU: -0.0058 Before: 0.6172 After: 0.6114
+[Epoch 49/500] G: 1.949 D: -0.707 EIoU: 1.609 WGAN: 0.340 GP: 0.003 WD: 0.740 ΔIoU: -0.0055 Before: 0.6172 After: 0.6117
+[Epoch 50/500] G: 1.949 D: -0.707 EIoU: 1.609 WGAN: 0.340 GP: 0.003 WD: 0.741 ΔIoU: -0.0057 Before: 0.6172 After: 0.6115

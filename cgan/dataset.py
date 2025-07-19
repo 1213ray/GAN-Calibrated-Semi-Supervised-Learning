@@ -1,171 +1,18 @@
-"""cGAN Patch-Calibrator  —  程式碼庫 (步驟 1-2/5)
-=================================================
-此畫布現在包含 **兩個 Python 模組**：
-  • *models.py*          — 生成器 + 判別器 (已審閱)
-  • *cgan_datasets.py*   — PyTorch 資料集，從 YOLO txt 標籤動態構建訓練元組。
-接下來的步驟將新增：
-  • train_cgan.py        — 完整訓練迴圈 (步驟 3)
-  • inference.py         — 單圖像校準器 (步驟 4)
-  • README.md / config   — 使用文件 (步驟 5)
-
-所有模組都保留在單一畫布中，以便於內聯編輯，但可以一對一地另存為單獨的 .py 檔案。
+"""
+CGAN Dataset Module - 簡化和優化版本
+用於加載和預處理 YOLO 格式的訓練數據
 """
 
-# =================================================
-# models.py  —  Generator & PatchGAN Discriminator
-# =================================================
-from __future__ import annotations
-import math, random, os
+import math
+import os
 from pathlib import Path
 from typing import List, Tuple
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from torch.utils.data import Dataset
 from torchvision import transforms
 from PIL import Image, ImageOps
 import yaml
-
-__all__ = [
-    "weights_init_normal", "GeneratorUNet", "Discriminator",
-    "CalibratorDataset",
-]
-
-# -------------------------------------------------
-#  Helper: weight initialisation (pix2pix style)
-# -------------------------------------------------
-
-def weights_init_normal(m: nn.Module) -> None:
-    """初始化 `Conv` 權重 ~ N(0,0.02) & Batch/InstanceNorm gamma ~ N(1,0.02)。"""
-    classname = m.__class__.__name__
-    if classname.find("Conv") != -1:
-        nn.init.normal_(m.weight.data, 0.0, 0.02)
-        if m.bias is not None:
-            nn.init.constant_(m.bias.data, 0.0)
-    elif classname.find("BatchNorm") != -1 or classname.find("InstanceNorm") != -1:
-        if m.weight is not None:
-            nn.init.normal_(m.weight.data, 1.0, 0.02)
-        if m.bias is not None:
-            nn.init.constant_(m.bias.data, 0.0)
-
-# -------------------------------------------------
-#  Building blocks for U-Net
-# -------------------------------------------------
-
-class UNetDown(nn.Module):
-    def __init__(self, in_size: int, out_size: int, normalize: bool = True, dropout: float | None = None):
-        super().__init__()
-        layers: List[nn.Module] = [nn.Conv2d(in_size, out_size, 4, stride=2, padding=1, bias=False)]
-        if normalize:
-            layers.append(nn.InstanceNorm2d(out_size))
-        layers.append(nn.LeakyReLU(0.2, inplace=True))
-        if dropout is not None and dropout > 0:
-            layers.append(nn.Dropout(dropout))
-        self.model = nn.Sequential(*layers)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:  # type: ignore[override]
-        return self.model(x)
-
-class UNetUp(nn.Module):
-    def __init__(self, in_size: int, out_size: int, dropout: float | None = None):
-        super().__init__()
-        layers = [
-            nn.ConvTranspose2d(in_size, out_size, 4, stride=2, padding=1, bias=False),
-            nn.InstanceNorm2d(out_size),
-            nn.ReLU(inplace=True),
-        ]
-        if dropout is not None and dropout > 0:
-            layers.append(nn.Dropout(dropout))
-        self.model = nn.Sequential(*layers)
-
-    def forward(self, x: torch.Tensor, skip_input: torch.Tensor) -> torch.Tensor:  # type: ignore[override]
-        x = self.model(x)
-        x = torch.cat((x, skip_input), 1)
-        return x
-
-# -------------------------------------------------
-#  Generator  (U-Net backbone → Δ vector)
-# -------------------------------------------------
-
-class GeneratorUNet(nn.Module):
-    """4層下採樣 / 4層上採樣的U-Net，輸出4維的邊界框校正Δ。"""
-
-    def __init__(self, delta_scale: float = 0.25):
-        super().__init__()
-        self.delta_scale = float(delta_scale)
-
-        # 編碼器
-        self.down1 = UNetDown(3,   64, normalize=False)  # (128→64)
-        self.down2 = UNetDown(64, 128)
-        self.down3 = UNetDown(128, 256)
-        self.down4 = UNetDown(256, 512, dropout=0.5)
-
-        # 解碼器
-        self.up1   = UNetUp(512, 256, dropout=0.5)
-        self.up2   = UNetUp(512, 128, dropout=0.5)
-        self.up3   = UNetUp(256,  64)
-        self.up4   = nn.Sequential(
-            nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1, bias=False),
-            nn.InstanceNorm2d(64), nn.ReLU(inplace=True),
-        )
-
-        # 全局池化 → Δ (4)
-        self.avg_pool = nn.AdaptiveAvgPool2d(1)
-        self.fc_delta = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(64, 4),
-            nn.Tanh(),  # (-1,1)
-        )
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:  # type: ignore[override]
-        d1 = self.down1(x)
-        d2 = self.down2(d1)
-        d3 = self.down3(d2)
-        d4 = self.down4(d3)
-        u1 = self.up1(d4, d3)
-        u2 = self.up2(u1, d2)
-        u3 = self.up3(u2, d1)
-        u4 = self.up4(u3)
-        pooled = self.avg_pool(u4)
-        delta_raw = self.fc_delta(pooled)
-        return delta_raw * self.delta_scale
-
-# -------------------------------------------------
-#  Discriminator  (70×70 PatchGAN)
-# -------------------------------------------------
-
-class Discriminator(nn.Module):
-    """PatchGAN，用於判斷 (pred_patch, other_patch) 對。"""
-
-    def __init__(self, spectral_norm: bool = False):
-        super().__init__()
-
-        def conv_block(in_ch: int, out_ch: int, norm: bool = True):
-            conv = nn.Conv2d(in_ch, out_ch, 4, stride=2, padding=1)
-            if spectral_norm:
-                conv = nn.utils.spectral_norm(conv)
-            layers = [conv]
-            if norm:
-                layers.append(nn.InstanceNorm2d(out_ch))
-            layers.append(nn.LeakyReLU(0.2, inplace=True))
-            return layers
-
-        self.model = nn.Sequential(*[
-            *conv_block(6,   64, norm=False),
-            *conv_block(64, 128),
-            *conv_block(128,256),
-            *conv_block(256,512),
-            nn.Conv2d(512, 1, 4, stride=1, padding=1, bias=False)
-        ])
-
-    def forward(self, pred_patch: torch.Tensor, other_patch: torch.Tensor) -> torch.Tensor:  # type: ignore[override]
-        x = torch.cat([pred_patch, other_patch], dim=1)
-        return self.model(x)
-
-# =================================================
-# cgan_datasets.py  —  CalibratorDataset
-# =================================================
 
 class CalibratorDataset(Dataset):
     """動態構建 (pred_patch, gt_patch, Δ_true, pred_bbox, img_path) 元組。
@@ -225,17 +72,31 @@ class CalibratorDataset(Dataset):
 
     @staticmethod
     def _bbox2delta(gt: torch.Tensor, pred: torch.Tensor) -> torch.Tensor:
-        """計算 Δ = (dx_rel, dy_rel, log dw, log dh)。
-        使用改進的穩定歸一化方法。
         """
-        # 使用較大的尺寸進行歸一化，提高穩定性
-        norm_factor = max(float(pred[2]), float(pred[3]), 0.1)
+        計算穩定的 Δ = (dx_rel, dy_rel, log dw, log dh)
+        改進的歸一化方法，增強數值穩定性
+        """
+        # 使用固定的歸一化因子，避免小框產生過大的 delta 值
+        # 改用 pred 框的幾何平均尺寸作為歸一化因子
+        pred_area = float(pred[2]) * float(pred[3])
+        norm_factor = max(math.sqrt(pred_area), 0.05)  # 設置最小歸一化因子
+        
         dx = (float(gt[0]) - float(pred[0])) / norm_factor
         dy = (float(gt[1]) - float(pred[1])) / norm_factor
         
-        # 使用log ratio，但加入穩定性項
-        dw = math.log(max(float(gt[2]), 1e-6) / max(float(pred[2]), 1e-6))
-        dh = math.log(max(float(gt[3]), 1e-6) / max(float(pred[3]), 1e-6))
+        # 對數比值計算，加強數值保護
+        eps = 1e-6
+        gt_w = max(float(gt[2]), eps)
+        gt_h = max(float(gt[3]), eps)
+        pred_w = max(float(pred[2]), eps)
+        pred_h = max(float(pred[3]), eps)
+        
+        # 限制比值範圍，避免極端情況
+        w_ratio = max(0.1, min(10.0, gt_w / pred_w))
+        h_ratio = max(0.1, min(10.0, gt_h / pred_h))
+        
+        dw = math.log(w_ratio)
+        dh = math.log(h_ratio)
         
         return torch.tensor([dx, dy, dw, dh], dtype=torch.float32)
 

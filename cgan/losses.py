@@ -96,44 +96,56 @@ class HybridLoss(nn.Module):
         
         return total_loss, iou_loss
 
-def smooth_clamp(x, min_val, max_val, temperature=0.1):
-    """Smooth clamp function that maintains gradients"""
-    return min_val + (max_val - min_val) * torch.sigmoid((x - (min_val + max_val) / 2) / temperature)
+def smooth_clamp(x, min_val, max_val, temperature=0.5):
+    """
+    Smooth clamp function that maintains gradients
+    使用較大的溫度值以避免梯度消失問題
+    """
+    center = (min_val + max_val) / 2
+    normalized = (x - center) / temperature
+    return min_val + (max_val - min_val) * torch.sigmoid(normalized)
 
 def apply_delta_to_bbox(bbox, delta, training=True):
     """
-    Apply predicted deltas to bounding boxes with consistent clamping behavior
+    Apply predicted deltas to bounding boxes with enhanced numerical stability
     Args:
-        bbox: (N, 4) [cx, cy, w, h]
-        delta: (N, 4) [dx_rel, dy_rel, log_dw, log_dh]
+        bbox: (N, 4) [cx, cy, w, h] normalized coordinates
+        delta: (N, 4) [dx_rel, dy_rel, log_dw, log_dh] regression deltas
         training: bool, whether in training mode (affects gradient handling)
     Returns:
-        calibrated_bbox: (N, 4) [cx, cy, w, h]
+        calibrated_bbox: (N, 4) [cx, cy, w, h] calibrated coordinates
     """
-    if training:
-        # 訓練時使用smooth clamp保持梯度連續性
-        delta_clamped = smooth_clamp(delta, -2, 2)
-    else:
-        # 推論時使用硬截斷以確保穩定性
-        delta_clamped = torch.clamp(delta, -2, 2)
+    # 更保守的 delta 範圍限制，避免過度校正
+    delta_clamp_range = 1.5  # 從 2.0 降低到 1.5
     
+    if training:
+        # 訓練時使用 smooth clamp 保持梯度連續性
+        delta_clamped = smooth_clamp(delta, -delta_clamp_range, delta_clamp_range)
+    else:
+        # 推論時使用硬截斷確保穩定性
+        delta_clamped = torch.clamp(delta, -delta_clamp_range, delta_clamp_range)
+    
+    # 中心點偏移：使用相對於邊界框尺寸的偏移
     cx = bbox[:, 0] + delta_clamped[:, 0] * bbox[:, 2]
     cy = bbox[:, 1] + delta_clamped[:, 1] * bbox[:, 3]
-    w = bbox[:, 2] * torch.exp(delta_clamped[:, 2])
-    h = bbox[:, 3] * torch.exp(delta_clamped[:, 3])
     
+    # 尺寸縮放：加入數值穩定性保護
+    w_scale = torch.exp(torch.clamp(delta_clamped[:, 2], -1.0, 1.0))  # 限制縮放範圍
+    h_scale = torch.exp(torch.clamp(delta_clamped[:, 3], -1.0, 1.0))
+    w = bbox[:, 2] * w_scale
+    h = bbox[:, 3] * h_scale
+    
+    # 邊界約束：確保結果在有效範圍內
     if training:
-        # 訓練時使用smooth clamp保持梯度連續性
         cx = smooth_clamp(cx, 0.05, 0.95)
         cy = smooth_clamp(cy, 0.05, 0.95)
-        w = smooth_clamp(w, 0.01, 0.9)
-        h = smooth_clamp(h, 0.01, 0.9)
+        w = smooth_clamp(w, 0.02, 0.8)   # 稍微放寬最小值限制
+        h = smooth_clamp(h, 0.02, 0.8)
     else:
-        # 推論時使用硬截斷
         cx = torch.clamp(cx, 0.05, 0.95)
         cy = torch.clamp(cy, 0.05, 0.95)
-        w = torch.clamp(w, 0.01, 0.9)
-        h = torch.clamp(h, 0.01, 0.9)
+        w = torch.clamp(w, 0.02, 0.8)
+        h = torch.clamp(h, 0.02, 0.8)
     
     return torch.stack([cx, cy, w, h], dim=-1)
 

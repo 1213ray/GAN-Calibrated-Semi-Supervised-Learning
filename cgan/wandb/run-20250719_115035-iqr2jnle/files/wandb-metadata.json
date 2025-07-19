@@ -1,0 +1,40 @@
+{
+  "os": "Windows-10-10.0.19045-SP0",
+  "python": "CPython 3.13.5",
+  "startedAt": "2025-07-19T03:50:35.856308Z",
+  "program": "C:\\Users\\alian\\PycharmProjects\\yolov8\\cgan\\cgan_train_enhanced.py",
+  "codePath": "cgan\\cgan_train_enhanced.py",
+  "codePathLocal": "cgan_train_enhanced.py",
+  "git": {
+    "remote": "https://github.com/1213ray/pix2pix_CGAN.git",
+    "commit": "38e23294625b1d7aefba2840954b3c6e4b0dfe9e"
+  },
+  "email": "20031213ray@gmail.com",
+  "root": "C:\\Users\\alian\\PycharmProjects\\yolov8\\cgan",
+  "host": "DESKTOP-9HN4S50",
+  "executable": "C:\\Users\\alian\\PycharmProjects\\yolov8\\.venv\\Scripts\\python.exe",
+  "cpu_count": 6,
+  "cpu_count_logical": 12,
+  "gpu": "NVIDIA GeForce RTX 2070",
+  "gpu_count": 1,
+  "disk": {
+    "/": {
+      "total": "999554600960",
+      "used": "213112143872"
+    }
+  },
+  "memory": {
+    "total": "34266636288"
+  },
+  "gpu_nvidia": [
+    {
+      "name": "NVIDIA GeForce RTX 2070",
+      "memoryTotal": "8589934592",
+      "cudaCores": 2304,
+      "architecture": "Turing",
+      "uuid": "GPU-58a9a48c-b155-5b7f-9364-6c87ceeb3c6a"
+    }
+  ],
+  "cudaVersion": "12.9",
+  "writerId": "m12wgmhzxwoic23kgyqf4mgfmiodo1ev"
+}

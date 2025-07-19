@@ -4,8 +4,8 @@
 # =================================================
 img_size: 128 # 圖像大小
 batch_size: 128 # 批次大小 (降低以處理更複雜的數據)
-n_epochs: 100 # 訓練 epoch 數量
-lr: 0.0001 # 學習率 (降低以獲得更穩定的訓練)
+n_epochs: 500 # 訓練 epoch 數量
+lr: 0.0002 # 學習率 (降低以獲得更穩定的訓練)
 beta1: 0.5 # Adam 優化器參數 beta1
 beta2: 0.999 # Adam 優化器參數 beta2
 
@@ -17,23 +17,22 @@ pure_eiou: true # 使用純 EIoU 模式
 use_hybrid_loss: true # 使用 EIoU 損失系統
 
 spectral_norm: true # 是否使用譜範數
-delta_scale: 0.2 # delta 縮放因子 (進一步降低以減少過度校正)
+delta_scale: 0.3 # delta 縮放因子 (適中的值，避免過度限制校正能力)
 generator_type: "unet" # 生成器類型: "unet" 或 "simple" (回到simple類型)
 early_stop: # 早停設定
   patience: 20 # 早停耐心值 (增加耐心)
   min_delta: 1.0e-5 # 早停最小 delta (進一步降低閾值)
-train_split: 0.9 # 訓練集分割比例
-val_split: 0.1 # 驗證集分割比例
+train_split: 0.8 # 訓練集分割比例
+val_split: 0.2 # 驗證集分割比例
 amp: true # 是否使用自動混合精度
 save_dir: runs/exp # 模型儲存目錄
 seed: 42 # 隨機種子
-d_train_ratio: 1 # 每 N 個批次訓練一次判別器 (提高訓練頻率)
 iou_threshold: 0.25 # IoU 閾值用於匹配預測框與真實框 (降低以獲得更多樣本)
 data_dir: ../datasets/500_100_100/cgan # 資料集根目錄路徑
 
-# WGAN-GP 參數
-lambda_gp: 10.0 # 梯度懲罰權重
-n_critic: 1 # 每次生成器更新前的判別器訓練次數 (降低以平衡訓練)
+# WGAN-GP 參數 (優化後的設置)
+lambda_gp: 1.0 # 梯度懲罰權重 (從10.0降低到1.0以提高穩定性)
+n_critic: 2 # 每次生成器更新前的判別器訓練次數 (從5降低到3以平衡訓練)
 
 # W&B configuration
 wandb:

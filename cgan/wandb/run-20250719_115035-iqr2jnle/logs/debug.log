@@ -21,3 +21,10 @@ config: {'img_size': 128, 'batch_size': 128, 'n_epochs': 500, 'lr': 0.0002, 'bet
 2025-07-19 11:50:36,843 INFO    MainThread:15656 [wandb_init.py:init():1075] run started, returning control to user process
 2025-07-19 11:51:42,107 INFO    MainThread:15656 [wandb_watch.py:_watch():70] Watching
 2025-07-19 11:51:42,108 INFO    MainThread:15656 [wandb_watch.py:_watch():70] Watching
+2025-07-20 01:18:43,659 INFO    MainThread:15656 [wandb_run.py:_finish():2224] finishing run 20031213ray-chung-yuan-christian-university/cgan-calibration/iqr2jnle
+2025-07-20 01:18:43,659 INFO    MainThread:15656 [wandb_run.py:_atexit_cleanup():2423] got exitcode: 0
+2025-07-20 01:18:43,659 INFO    MainThread:15656 [wandb_run.py:_restore():2405] restore
+2025-07-20 01:18:43,659 INFO    MainThread:15656 [wandb_run.py:_restore():2411] restore done
+2025-07-20 01:18:50,297 INFO    MainThread:15656 [wandb_run.py:_footer_history_summary_info():3903] rendering history
+2025-07-20 01:18:50,298 INFO    MainThread:15656 [wandb_run.py:_footer_history_summary_info():3935] rendering summary
+2025-07-20 01:18:50,299 INFO    MainThread:15656 [wandb_run.py:_footer_sync_info():3864] logging synced files
